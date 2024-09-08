@@ -1,6 +1,7 @@
-use std::{io::{self, BufRead, Write}, path::Path};
+use std::{io::{self, stdout, BufRead, Write}, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use mrt_cpu::computer::*;
+
 
 fn main() {
     println!("MRT-CPU CLI Utility
@@ -8,6 +9,18 @@ fn main() {
     ");
 
     let mut system = System::new(0);
+    
+    let interrupt = Arc::new(AtomicBool::new(false));
+    
+    {
+        let interrupt_clone = interrupt.clone();
+
+        ctrlc::set_handler(move || {
+            print!("Ctrl-C");
+            _ = stdout().flush();
+            interrupt_clone.store(true, Ordering::Release)
+        }).expect("Error: failed to set interrupt handler");
+    }
 
     loop {
         print!("% ");
@@ -31,6 +44,7 @@ fn main() {
     load_rom [rom_file] - load a rom
     ram_size [ram_size] - set ram size
     step, s <step_count> - step N amount of instructions
+    continue, c - continue running until Ctrl+C
                 ");
             },
             "exit" | "quit" => {
@@ -86,8 +100,19 @@ fn main() {
             
                 while step_count > 0 {
                     step_count -=1 ;
-                    system.tick();
+                    if system.tick() {
+                        break;
+                    }
                 }
+            },
+            "continue" | "c" => {
+                while !interrupt.load(Ordering::Acquire) {
+                    if system.tick() {
+                        break;
+                    }
+                }
+
+                interrupt.store(false, Ordering::Release);
             },
             _ => {
                 println!("Unrecognized command");

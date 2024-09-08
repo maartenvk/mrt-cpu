@@ -33,17 +33,21 @@ impl System {
         Ok(())
     }
 
-    pub fn tick(&mut self) {
+    // returns true if halted
+    pub fn tick(&mut self) -> bool {
         let opcode = self.rom.get(self.ipc as usize).unwrap_or(&0);
         let data = self.rom.get(self.ipc as usize + 1).unwrap_or(&0);
 
         match opcode {
             0 => { // HLT
                 println!("Info: halting at ip={}", self.ipc);
+                return true;
             },
             _ => {
                 println!("Unhandled opcode: {}", opcode);
             }
         }
+
+        false
     }
 }
