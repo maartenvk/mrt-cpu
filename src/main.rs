@@ -1,4 +1,4 @@
-use std::{env, io::{self, BufRead, Write}, path::Path};
+use std::{io::{self, BufRead, Write}, path::Path};
 
 use mrt_cpu::computer::*;
 
@@ -26,13 +26,14 @@ fn main() {
         // do something with input
         match command[0] {
             "help" => {
-                println!("Help:
-                exit - exit application
-                load_rom [rom_file] - load a rom
-                ram_size [ram_size] - set ram size
+                println!("Help: main, alias [required] <optional> - description
+    exit, quit - exit application
+    load_rom [rom_file] - load a rom
+    ram_size [ram_size] - set ram size
+    step, s <step_count> - step N amount of instructions
                 ");
             },
-            "exit" => {
+            "exit" | "quit" => {
                 return;
             },
             "load_rom" => 'load_rom: {
@@ -69,6 +70,23 @@ fn main() {
                 let result = system.load_ram(vec![0; size.unwrap()]);
                 if result.is_err() {
                     println!("{}", result.err().unwrap());
+                }
+            },
+            "step" | "s" => 'step: {
+                let step_count = command.get(1);
+                let mut step_count = if step_count.is_some() {
+                    let step_count = step_count.unwrap().parse::<usize>();
+                    if step_count.is_err() {
+                        println!("Error: Expected an integer for step count");
+                        break 'step;
+                    }
+
+                    step_count.unwrap()
+                } else { 1 };
+            
+                while step_count > 0 {
+                    step_count -=1 ;
+                    system.tick();
                 }
             },
             _ => {

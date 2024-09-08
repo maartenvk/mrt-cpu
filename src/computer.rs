@@ -34,10 +34,10 @@ impl System {
     }
 
     pub fn tick(&mut self) {
-        let opcode = self.rom[self.ipc as usize];
+        let opcode = self.rom.get(self.ipc as usize);
         self.ipc += 1;
 
-        let data = self.rom[self.ipc as usize];
+        let data = self.rom.get(self.ipc as usize);
         self.ipc += 1;
     }
 }
