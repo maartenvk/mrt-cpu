@@ -1,31 +1,45 @@
 use std::{fs::File, io::{Read, Write}};
 
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Opcode {
-    HLT
+    HLT,
+    LDI
 }
 
 impl From<&str> for Opcode {
     fn from(value: &str) -> Self {
         return match value.to_uppercase().as_str() {
-            "HLT" => {
-                Opcode::HLT
-            },
-            _ => {
-                panic!("No such opcode");
-            }
+            "HLT" => Opcode::HLT,
+            "LDI" => Opcode::LDI,
+            _ => panic!("No such opcode"),
         }
     }
 }
 
-pub struct Instruction {
-    opcode: Opcode
+#[repr(u8)]
+pub enum Register {
+    r0,
+    r1,
+    r2
+}
+
+pub enum Instruction {
+    NoParam(Opcode),
+    RegImm(Opcode, Register, u8),
+    TripleReg(Opcode, Register, Register, Register)
 }
 
 impl Instruction {
     pub fn serialize(&self) -> Vec<u8> {
-        vec![self.opcode as u8]
+        return vec![*match self {
+            Self::NoParam(opcode)
+                => opcode,
+            Self::RegImm(opcode, _, _)
+                => opcode,
+            Self::TripleReg(opcode, _, _, _)
+                => opcode
+        } as u8];
     }
 }
 
@@ -73,12 +87,8 @@ impl Compiler {
         }
 
         let lines = lines.lines().map(String::from).collect::<Vec<String>>();
-
         for line in lines {
-            let split = line.split(' ').collect::<Vec<_>>();
-            self.generated.instructions.push(Instruction {
-                opcode: Opcode::from(split[0])
-            });
+
         }
 
         // flush to output
