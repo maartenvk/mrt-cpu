@@ -70,6 +70,12 @@ pub struct Compiler {
     generated: Bytecode
 }
 
+#[derive(Debug)]
+pub enum CompileError {
+    ReadFromInputFailed,
+    WriteToOutputFailed
+}
+
 impl Compiler {
     pub fn new(input_file: File, output_file: File) -> Self {
         Self {
@@ -79,12 +85,15 @@ impl Compiler {
         }
     }
 
-    pub fn compile(&mut self) {
+    pub fn compile(&mut self) -> Result<(), CompileError> {
         let mut lines = String::new();
         if self.input_file.read_to_string(&mut lines).is_err() {
-            println!("Error: Failed to read from input");
-            return;
+            return Err(CompileError::ReadFromInputFailed);
         }
+
+        let mut line_number = 0;
+        let chars = lines.chars();
+
 
         let lines = lines.lines().map(String::from).collect::<Vec<String>>();
         for line in lines {
@@ -94,10 +103,9 @@ impl Compiler {
         // flush to output
         let binary = &self.generated.create_binary();
         if self.output_file.write_all(binary).is_err() {
-            println!("Error: Failed to write to output file");
-            return;
+            return Err(CompileError::WriteToOutputFailed);
         }
 
-        println!("Info: Compilation succesful");
+        Ok(())
     }
 }

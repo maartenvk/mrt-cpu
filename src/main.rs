@@ -149,7 +149,12 @@ fn main() {
                 }
 
                 let mut compiler = Compiler::new(input_file.unwrap(), output_file.unwrap());
-                compiler.compile();
+                let result = compiler.compile();
+                if result.is_ok() {
+                    println!("Info: Compilation succesful, written to file: {}", output_path);
+                } else {
+                    println!("Error: Compilation failed: {:?}", result.err().unwrap());
+                }
             },
             _ => {
                 println!("Unrecognized command");
