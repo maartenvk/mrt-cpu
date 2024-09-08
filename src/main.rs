@@ -106,9 +106,20 @@ fn main() {
                 }
             },
             "continue" | "c" => {
-                while !interrupt.load(Ordering::Acquire) {
+                const CHECK_INTERVAL: usize = 1000;
+                let mut counter = 0;
+
+                loop {
                     if system.tick() {
                         break;
+                    }
+
+                    counter += 1;
+                    if counter > CHECK_INTERVAL {
+                        counter = 0;
+                        if interrupt.load(Ordering::Acquire) {
+                            break;
+                        }
                     }
                 }
 
