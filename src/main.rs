@@ -1,6 +1,6 @@
-use std::{io::{self, stdout, BufRead, Write}, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{fs::File, io::{self, stdout, BufRead, Write}, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
-use mrt_cpu::computer::*;
+use mrt_cpu::{compiler::Compiler, computer::*};
 
 
 fn main() {
@@ -45,6 +45,7 @@ fn main() {
     ram_size [ram_size] - set ram size
     step, s <step_count> - step N amount of instructions
     continue, c - continue running until Ctrl+C
+    compile, com [file] <out> - compile assembly file and output to `out'
                 ");
             },
             "exit" | "quit" => {
@@ -124,6 +125,31 @@ fn main() {
                 }
 
                 interrupt.store(false, Ordering::Release);
+            },
+            "compile" | "com" => 'compile: {
+                let input_path = command.get(1);
+                if input_path.is_none() {
+                    println!("Error: No input file provided");
+                    break 'compile;
+                }
+
+                let output_path = command.get(2);
+                let output_path = output_path.unwrap_or(&"out.rom");
+
+                let input_file = File::open(Path::new(input_path.unwrap())); 
+                if input_file.is_err() {
+                    println!("Error: Failed to read from file");
+                    break 'compile;
+                }
+
+                let output_file = File::create(Path::new(output_path));
+                if output_file.is_err() {
+                    println!("Error: Failed to create output file: {}", output_path);
+                    break 'compile;
+                }
+
+                let mut compiler = Compiler::new(input_file.unwrap(), output_file.unwrap());
+                compiler.compile();
             },
             _ => {
                 println!("Unrecognized command");
