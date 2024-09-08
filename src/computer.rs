@@ -5,6 +5,16 @@ pub struct System {
     ipc: u8,
 }
 
+#[derive(Debug)]
+pub enum LoadRomError {
+    EmptyRom()
+}
+
+#[derive(Debug)]
+pub enum LoadRamError {
+    EmptyRam()
+}
+
 impl System {
     pub fn new(ram_size: usize) -> Self {
         Self {
@@ -15,18 +25,18 @@ impl System {
         }
     }
 
-    pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),&str> {
+    pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
         if rom.is_empty() {
-            return Err("Loaded rom should not be empty");
+            return Err(LoadRomError::EmptyRom())
         }
         
         self.rom = rom;
         Ok(())
     }
 
-    pub fn load_ram(&mut self, ram: Vec<u8>) -> Result<(),&str> {
+    pub fn load_ram(&mut self, ram: Vec<u8>) -> Result<(),LoadRamError> {
         if ram.is_empty() {
-            return Err("Loaded ram should not be empty");
+            return Err(LoadRamError::EmptyRam())
         }
 
         self.ram = ram;

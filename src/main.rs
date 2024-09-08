@@ -66,7 +66,7 @@ fn main() {
 
                 let result = system.load_rom(rom.unwrap());
                 if result.is_err() {
-                    println!("{}", result.err().unwrap());
+                    println!("{:?}", result.err().unwrap());
                 }
             },
             "ram_size" => 'ram_size: {
@@ -84,7 +84,7 @@ fn main() {
 
                 let result = system.load_ram(vec![0; size.unwrap()]);
                 if result.is_err() {
-                    println!("{}", result.err().unwrap());
+                    println!("{:?}", result.err().unwrap());
                 }
             },
             "step" | "s" => 'step: {
