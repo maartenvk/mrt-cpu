@@ -34,10 +34,16 @@ impl System {
     }
 
     pub fn tick(&mut self) {
-        let opcode = self.rom.get(self.ipc as usize);
-        self.ipc += 1;
+        let opcode = self.rom.get(self.ipc as usize).unwrap_or(&0);
+        let data = self.rom.get(self.ipc as usize + 1).unwrap_or(&0);
 
-        let data = self.rom.get(self.ipc as usize);
-        self.ipc += 1;
+        match opcode {
+            0 => { // HLT
+                println!("Info: halting at ip={}", self.ipc);
+            },
+            _ => {
+                println!("Unhandled opcode: {}", opcode);
+            }
+        }
     }
 }
