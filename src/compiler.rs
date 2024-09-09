@@ -1,4 +1,4 @@
-use std::{fs::File, io::{Read, Write}};
+use std::{cell::Cell, fs::File, io::{Read, Write}};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
@@ -27,7 +27,7 @@ impl TryFrom<&str> for Opcode {
 }
 
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Register {
     r0,
     r1,
@@ -54,6 +54,7 @@ impl TryFrom<&str> for Register {
     }
 }
 
+#[derive(Debug)]
 pub enum Instruction {
     NoParam(Opcode),
     RegImm(Opcode, Register, u8),
@@ -70,6 +71,36 @@ impl Instruction {
             Self::TripleReg(opcode, _, _, _)
                 => opcode
         } as u8];
+    }
+
+    pub fn generate<F>(opcode: Opcode, mut consumer: F) -> Result<Self, CompileError> where F: FnMut() -> Result<Token, CompileError> {
+        let reg = |consume_token: &mut F| {
+            match consume_token()? {
+                Token::Register(reg) => Ok(reg),
+                token => Err(CompileError::UnexpectedTokenType(token))
+            }
+        };
+
+        let imm = |consume_token: &mut F| {
+            match consume_token()? {
+                Token::Immediate(val) => Ok(val),
+                token => Err(CompileError::UnexpectedTokenType(token))
+            }
+        };
+
+        let create_no_param = |opcode| {
+            Instruction::NoParam(opcode)
+        };
+
+        let create_reg_imm = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
+            Ok(Instruction::RegImm(opcode, reg(consumer)?, imm(consumer)?))
+        };
+
+        Ok(match opcode {
+            Opcode::HLT => create_no_param(opcode),
+            Opcode::LDI => create_reg_imm(opcode, &mut consumer)?,
+            _ => todo!()
+        })
     }
 }
 
@@ -110,7 +141,8 @@ pub enum CompileError {
     UnexpectedEOF,
     UnhandledState(CompilationState),
     UnknownSymbol(String),
-    InvalidNumber(String)
+    InvalidNumber(String),
+    UnexpectedTokenType(Token)
 }
 
 #[derive(Debug, Clone)]
@@ -120,7 +152,7 @@ pub enum CompilationState {
     Numeric(Vec<char>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Opcode(Opcode),
     Register(Register),
@@ -257,6 +289,42 @@ impl Compiler {
         Ok(tokens)
     }
 
+    fn create_bytecode(&mut self, tokens: &mut Vec<Token>) -> Result<(), CompileError> {
+        let mut control_token: Option<Token> = None;
+        loop {
+            if let Some(ref token) = control_token {
+                if let Token::Opcode(opcode) = token {
+                    let mut token_consumer = || {
+                        if tokens.is_empty() {
+                            Err(CompileError::UnexpectedEOF)
+                        } else {
+                            Ok(tokens.remove(0))
+                        }
+                    };
+
+                    let instruction = Instruction::generate(*opcode, &mut token_consumer)?;
+                    println!("Info: generated {:?}", instruction);
+
+                    self.generated.instructions.push(instruction);
+                    control_token = None;
+
+                    continue;
+                }
+
+                return Err(CompileError::UnexpectedTokenType(token.clone()));
+            }
+
+            // todo: dont use vec to remove
+            if tokens.is_empty() {
+                break;
+            }
+
+            control_token = Some(tokens.remove(0));
+        }
+        
+        Ok(())
+    }
+
     pub fn compile(&mut self) -> Result<(), CompileError> {
         let mut data = String::new();
         if self.input_file.read_to_string(&mut data).is_err() {
@@ -275,8 +343,10 @@ impl Compiler {
             return Err(result.unwrap_err());
         }
 
-        for token in result.unwrap() {
-            println!("Token -> {:?}", token);
+        let mut tokens = result.unwrap();
+        let result = self.create_bytecode(&mut tokens);
+        if result.is_err() {
+            return Err(result.unwrap_err());
         }
 
         // flush to output
