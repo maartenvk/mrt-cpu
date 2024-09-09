@@ -1,4 +1,4 @@
-use std::{cell::Cell, fs::File, io::{Read, Write}};
+use std::{cell::Cell, collections::VecDeque, fs::File, io::{Read, Write}};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
@@ -289,7 +289,7 @@ impl Compiler {
         Ok(tokens)
     }
 
-    fn create_bytecode(&mut self, tokens: &mut Vec<Token>) -> Result<(), CompileError> {
+    fn create_bytecode(&mut self, tokens: &mut VecDeque<Token>) -> Result<(), CompileError> {
         let mut control_token: Option<Token> = None;
         loop {
             if let Some(ref token) = control_token {
@@ -298,7 +298,7 @@ impl Compiler {
                         if tokens.is_empty() {
                             Err(CompileError::UnexpectedEOF)
                         } else {
-                            Ok(tokens.remove(0))
+                            Ok(tokens.pop_front().unwrap())
                         }
                     };
 
@@ -314,12 +314,11 @@ impl Compiler {
                 return Err(CompileError::UnexpectedTokenType(token.clone()));
             }
 
-            // todo: dont use vec to remove
             if tokens.is_empty() {
                 break;
             }
 
-            control_token = Some(tokens.remove(0));
+            control_token = Some(tokens.pop_front().unwrap());
         }
         
         Ok(())
@@ -343,8 +342,8 @@ impl Compiler {
             return Err(result.unwrap_err());
         }
 
-        let mut tokens = result.unwrap();
-        let result = self.create_bytecode(&mut tokens);
+        let tokens = result.unwrap();
+        let result = self.create_bytecode(&mut VecDeque::from(tokens));
         if result.is_err() {
             return Err(result.unwrap_err());
         }
