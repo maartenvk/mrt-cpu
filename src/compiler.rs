@@ -27,7 +27,7 @@ impl TryFrom<&str> for Opcode {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Register {
     r0,
     r1,
@@ -63,14 +63,20 @@ pub enum Instruction {
 
 impl Instruction {
     pub fn serialize(&self) -> Vec<u8> {
-        return vec![*match self {
+        return match self {
             Self::NoParam(opcode)
-                => opcode,
-            Self::RegImm(opcode, _, _)
-                => opcode,
-            Self::TripleReg(opcode, _, _, _)
-                => opcode
-        } as u8];
+                => vec![
+                    (*opcode as u8) << 4
+                ],
+            Self::RegImm(opcode, reg, imm)
+                => vec![
+                    (*opcode as u8) << 4 | *reg as u8, *imm
+                ],
+            Self::TripleReg(opcode, reg, reg2, reg3)
+                => vec![
+                    (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4 | *reg3 as u8
+                ]
+        };
     }
 
     pub fn generate<F>(opcode: Opcode, mut consumer: F) -> Result<Self, CompileError> where F: FnMut() -> Result<Token, CompileError> {
