@@ -179,12 +179,7 @@ impl Compiler {
             }
 
             let state = current_state.unwrap();
-            let result = self.consume(state, c);
-            if result.is_err() {
-                return Err(result.unwrap_err());
-            }
-
-            current_state = result.unwrap();
+            current_state = self.consume(state, c)?;
 
             i += 1;
         }
@@ -278,22 +273,10 @@ impl Compiler {
         }
 
         self.data = data.chars().collect::<Vec<char>>();
+        _ = self.collect_states()?;
 
-        let result = self.collect_states();
-        if result.is_err() {
-            return Err(result.unwrap_err());
-        }
-
-        let result = self.flatten_states();
-        if result.is_err() {
-            return Err(result.unwrap_err());
-        }
-
-        let tokens = result.unwrap();
-        let result = self.create_bytecode(&mut VecDeque::from(tokens));
-        if result.is_err() {
-            return Err(result.unwrap_err());
-        }
+        let tokens = self.flatten_states()?;
+        _ = self.create_bytecode(&mut VecDeque::from(tokens))?;
 
         // flush to output
         let binary = &self.generated.create_binary();

@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use crate::types::Opcode;
 
 pub struct System {
