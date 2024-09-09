@@ -1,3 +1,5 @@
+use crate::types::Opcode;
+
 pub struct System {
     rom: Vec<u8>,
     ram: Vec<u8>,
@@ -45,16 +47,41 @@ impl System {
 
     // returns true if halted
     pub fn tick(&mut self) -> bool {
-        let opcode = self.rom.get(self.ipc as usize).unwrap_or(&0);
-        let data = self.rom.get(self.ipc as usize + 1).unwrap_or(&0);
+        let first_byte = *self.rom.get(self.ipc as usize).unwrap_or(&0);
+        let data = *self.rom.get(self.ipc as usize + 1).unwrap_or(&0);
+
+        let opcode_raw = first_byte >> 4;
+        let opcode = Opcode::try_from(opcode_raw);
+        if opcode.is_err() {
+            println!("Info: Illegal Instruction: {}", opcode_raw);
+            return false;
+        }
+
+        let opcode = opcode.unwrap();
+
+        let reg = || {
+            first_byte & 0b1111
+        };
+
+        let reg2 = || {
+            data >> 4
+        };
+
+        let reg3 = || {
+            data & 0b1111
+        };
+
+        let imm = || {
+            data
+        };
 
         match opcode {
-            0 => { // HLT
+            Opcode::HLT => {
                 println!("Info: halting at ip={}", self.ipc);
                 return true;
             },
             _ => {
-                println!("Unhandled opcode: {}", opcode);
+                println!("Unhandled opcode {:?} at ip={}", opcode, self.ipc);
             }
         }
 

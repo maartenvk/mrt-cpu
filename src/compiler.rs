@@ -1,65 +1,6 @@
-use std::{cell::Cell, collections::VecDeque, fs::File, io::{Read, Write}};
+use std::{collections::VecDeque, fs::File, io::{Read, Write}};
 
-#[repr(u8)]
-#[derive(Clone, Copy, Debug)]
-pub enum Opcode {
-    HLT,
-    LDI
-}
-
-#[derive(Debug)]
-pub enum OpcodeConversionError {
-    NoSuchOpcode
-}
-
-impl TryFrom<&str> for Opcode {
-    type Error = OpcodeConversionError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let result = match value.to_uppercase().as_str() {
-            "HLT" => Opcode::HLT,
-            "LDI" => Opcode::LDI,
-            _ => return Err(OpcodeConversionError::NoSuchOpcode)
-        };
-
-        Ok(result)
-    }
-}
-
-#[repr(u8)]
-#[derive(Debug, Copy, Clone)]
-pub enum Register {
-    r0,
-    r1,
-    r2
-}
-
-#[derive(Debug)]
-pub enum RegisterConversionError {
-    NoSuchRegister
-}
-
-impl TryFrom<&str> for Register {
-    type Error = RegisterConversionError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let result = match value.to_lowercase().as_str() {
-            "r0" => Register::r0,
-            "r1" => Register::r1,
-            "r2" => Register::r2,
-            _ => return Err(RegisterConversionError::NoSuchRegister)
-        };
-
-        Ok(result)
-    }
-}
-
-#[derive(Debug)]
-pub enum Instruction {
-    NoParam(Opcode),
-    RegImm(Opcode, Register, u8),
-    TripleReg(Opcode, Register, Register, Register)
-}
+use crate::types::*;
 
 impl Instruction {
     pub fn serialize(&self) -> Vec<u8> {
