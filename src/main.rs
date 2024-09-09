@@ -41,7 +41,7 @@ fn main() {
             "help" => {
                 println!("Help: main, alias [required] <optional> - description
     exit, quit - exit application
-    load_rom [rom_file] - load a rom
+    load_rom, lr [rom_file] - load a rom
     ram_size [ram_size] - set ram size
     step, s <step_count> - step N amount of instructions
     continue, c - continue running until Ctrl+C
@@ -51,7 +51,7 @@ fn main() {
             "exit" | "quit" => {
                 return;
             },
-            "load_rom" => 'load_rom: {
+            "load_rom" | "lr" => 'load_rom: {
                 let path = command.get(1);
                 if path.is_none() {
                     println!("Error: No path provided");
