@@ -1,3 +1,5 @@
+use std::borrow::BorrowMut;
+
 use crate::types::Opcode;
 
 pub struct System {
@@ -58,32 +60,33 @@ impl System {
         }
 
         let opcode = opcode.unwrap();
+        let reg_raw = (first_byte & 0b1111) as usize;
+        let reg2_raw = (data >> 4) as usize;
+        let reg3_raw = (data & 0b1111) as usize;
 
-        let reg = || {
-            first_byte & 0b1111
+        let reg = self.regs.get(reg_raw);
+        let reg2 = self.regs.get(reg2_raw);
+        let reg3= self.regs.get(reg3_raw);
+
+        let mut set_reg = |x: u8| {
+            self.regs[reg_raw] = x;
         };
 
-        let reg2 = || {
-            data >> 4
-        };
-
-        let reg3 = || {
-            data & 0b1111
-        };
-
-        let imm = || {
-            data
-        };
+        let imm = data;
 
         match opcode {
             Opcode::HLT => {
                 println!("Info: halting at ip={}", self.ipc);
                 return true;
             },
+            Opcode::LDI => {
+                set_reg(imm);
+                self.ipc += 2;
+            },
             _ => {
                 println!("Unhandled opcode {:?} at ip={}", opcode, self.ipc);
             }
-        }
+        };
 
         false
     }

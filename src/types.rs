@@ -67,6 +67,21 @@ impl TryFrom<&str> for Register {
     }
 }
 
+impl TryFrom<u8> for Register {
+    type Error = RegisterConversionError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        let result = match value {
+            0 => Register::R0,
+            1 => Register::R1,
+            2 => Register::R2,
+            _ => return Err(RegisterConversionError::NoSuchRegister)
+        };
+
+        Ok(result)
+    }
+}
+
 #[derive(Debug)]
 pub enum Instruction {
     NoParam(Opcode),
