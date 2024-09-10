@@ -162,7 +162,16 @@ fn main() {
                 for y in 0..4 {
                     for x in 0..4 {
                         let idx = y * 4 + x;
-                        print!("r{} = {:#02x} ", idx, regs[idx])
+
+                        if idx < 10 {
+                            print!(" ");
+                        }
+
+                        print!("r{} = {:#04x} ", idx, regs[idx])
+                    }
+
+                    if y == 0 {
+                        print!("\tip={:#04x}", system.get_ipc());
                     }
 
                     println!();

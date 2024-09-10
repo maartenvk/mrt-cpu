@@ -31,6 +31,11 @@ impl System {
         self.regs
     }
 
+    pub fn get_ipc(&self) -> u8 {
+        self.ipc
+    }
+
+
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
         if rom.is_empty() {
             return Err(LoadRomError::EmptyRom())
