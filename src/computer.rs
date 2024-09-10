@@ -27,6 +27,21 @@ impl System {
         }
     }
 
+    pub fn mem_get(&self, address: u16) -> u8 {
+        *self.ram.get(address as usize).unwrap_or_else(|| {
+            println!("Error: out of bounds memory access [{:#06x}] ip={}", address, self.ip);
+            return &0;
+        })
+    }
+
+    pub fn mem_set(&mut self, address: u16, value: u8) {
+        if let Some(reference) = self.ram.get_mut(address as usize) {
+            *reference = value;
+        } else {
+            println!("Error: out of bounds memory access [{:#06x}] ip={}", address, self.ip);
+        }
+    }
+
     pub fn get_regs(&self) -> [u8;16] {
         self.regs
     }
@@ -96,23 +111,11 @@ impl System {
                 self.ip += 2;
             },
             Opcode::SB => {
-                let mut_access = self.ram.get_mut(offset);
-                if let Some(address) = mut_access {
-                    *address = *reg.unwrap();
-                } else {
-                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ip);
-                }
-
+                self.mem_set(offset as u16, *reg.unwrap());
                 self.ip += 2;
             },
             Opcode::LB => {
-                let access = self.ram.get(offset);
-                if let Some(address) = access {
-                    self.regs[reg_raw] = *address;
-                } else {
-                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ip);
-                }
-
+                self.regs[reg_raw] = self.mem_get(offset as u16);
                 self.ip += 2;
             }
         };
