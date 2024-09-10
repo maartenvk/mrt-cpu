@@ -134,6 +134,13 @@ impl TryFrom<u8> for Register {
 }
 
 #[derive(Debug)]
+pub enum InstructionType {
+    NoParam,
+    RegImm,
+    TripleReg
+}
+
+#[derive(Debug)]
 pub enum Instruction {
     NoParam(Opcode),
     RegImm(Opcode, Register, u8),

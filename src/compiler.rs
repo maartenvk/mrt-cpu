@@ -20,6 +20,16 @@ impl Instruction {
         };
     }
 
+    pub fn get_type(opcode: Opcode) -> InstructionType {
+        match opcode {
+            Opcode::HLT => InstructionType::NoParam,
+            Opcode::LDI => InstructionType::RegImm,
+            Opcode::ADD => InstructionType::TripleReg,
+            Opcode::SB => InstructionType::TripleReg,
+            Opcode::LB => InstructionType::TripleReg
+        }
+    }
+
     pub fn generate<F>(opcode: Opcode, mut consumer: F) -> Result<Self, CompileError> where F: FnMut() -> Result<Token, CompileError> {
         let reg = |consume_token: &mut F| {
             match consume_token()? {
@@ -47,12 +57,11 @@ impl Instruction {
             Ok(Instruction::TripleReg(opcode, reg(consumer)?, reg(consumer)?, reg(consumer)?))
         };
 
-        Ok(match opcode {
-            Opcode::HLT => create_no_param(opcode),
-            Opcode::LDI => create_reg_imm(opcode, &mut consumer)?,
-            Opcode::ADD => create_triple_reg(opcode, &mut consumer)?,
-            Opcode::SB => create_triple_reg(opcode, &mut consumer)?,
-            Opcode::LB => create_triple_reg(opcode, &mut consumer)?,
+        let itype = Instruction::get_type(opcode);
+        Ok(match itype {
+            InstructionType::NoParam => create_no_param(opcode),
+            InstructionType::RegImm => create_reg_imm(opcode, &mut consumer)?,
+            InstructionType::TripleReg => create_triple_reg(opcode, &mut consumer)?
         })
     }
 }

@@ -1,6 +1,6 @@
 use std::{fs::File, io::{self, stdout, BufRead, Write}, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
-use mrt_cpu::{compiler::Compiler, computer::*};
+use mrt_cpu::{compiler::{CompileError, Compiler, Token}, computer::*, types::{Instruction, InstructionType, Opcode, Register}};
 
 
 fn main() {
@@ -48,6 +48,7 @@ fn main() {
     compile, com [file] <out> - compile assembly file and output to `out'
     regs - print system registers
     goto [address] - set ip to address
+    disassemble, dis - disassemble instruction at ip
                 ");
             },
             "exit" | "quit" => {
@@ -196,7 +197,64 @@ fn main() {
             "disassemble" | "dis" => 'disassemble: {
                 let ip = system.get_ip() as u16;
                 let first_byte = system.get_rom(ip);
-                break 'disassemble;
+                let opcode_raw = first_byte >> 4;
+                let opcode = Opcode::try_from(opcode_raw);
+                if opcode.is_err() {
+                    println!("Error: Disassembly failed: Unknown opcode {}", opcode_raw);
+                    break 'disassemble;
+                }
+
+                let opcode = opcode.unwrap();
+                let mut idx = 0;
+
+                let reg_raw = first_byte & 0b1111;
+
+                let get_reg = |raw: u8| {
+                    if let Ok(result) = Register::try_from(raw) {
+                        Ok(Token::Register(result))
+                    } else {
+                        Err(CompileError::UnexpectedEOF)
+                    }
+                };
+
+                let second_byte = system.get_rom(ip + 1);
+
+                let imm = || {
+                    Token::Immediate(second_byte)
+                };
+
+                let generated = Instruction::generate(opcode, || {
+                    Ok(match Instruction::get_type(opcode) {
+                        InstructionType::NoParam => return Err(CompileError::UnexpectedEOF),
+                        InstructionType::RegImm => {
+                            let val = match idx {
+                                0 => get_reg(reg_raw)?,
+                                1 => imm(),
+                                _ => return Err(CompileError::UnexpectedEOF)
+                            };
+
+                            idx += 1;
+                            val
+                        },
+                        InstructionType::TripleReg => {
+                            let val = match idx {
+                                0 => get_reg(reg_raw)?,
+                                1 => get_reg(second_byte >> 4)?,
+                                2 => get_reg(second_byte & 0b1111)?,
+                                _ => return Err(CompileError::UnexpectedEOF)
+                            };
+                            
+                            idx += 1;
+                            val
+                        }
+                    })
+                });
+
+                if let Ok(instruction) = generated {
+                    println!("{:#04x}: {:?}", ip, instruction);
+                } else {
+                    println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
+                }
             },
             _ => {
                 println!("Unrecognized command");
