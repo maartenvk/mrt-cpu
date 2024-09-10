@@ -50,7 +50,9 @@ impl Instruction {
         Ok(match opcode {
             Opcode::HLT => create_no_param(opcode),
             Opcode::LDI => create_reg_imm(opcode, &mut consumer)?,
-            Opcode::ADD => create_triple_reg(opcode, &mut consumer)?
+            Opcode::ADD => create_triple_reg(opcode, &mut consumer)?,
+            Opcode::SB => create_triple_reg(opcode, &mut consumer)?,
+            Opcode::LB => create_triple_reg(opcode, &mut consumer)?,
         })
     }
 }
@@ -93,14 +95,15 @@ pub enum CompileError {
     UnhandledState(CompilationState),
     UnknownSymbol(String),
     InvalidNumber(String),
-    UnexpectedTokenType(Token)
+    UnexpectedTokenType(Token),
+    UnexpectedCharacter(char)
 }
 
 #[derive(Debug, Clone)]
 pub enum CompilationState {
     Comment(Vec<char>),
     Symbol(Vec<char>),
-    Numeric(Vec<char>),
+    Numeric(Vec<char>)
 }
 
 #[derive(Debug, Clone)]
@@ -174,7 +177,9 @@ impl Compiler {
                     _ if c.is_ascii_digit()
                         => current_state = Some(CompilationState::Numeric(vec![c])),
 
-                    _ => {}
+                    _ if c.is_ascii_whitespace() => {},
+
+                    _ => return Err(CompileError::UnexpectedCharacter(c))
                 };
 
                 i += 1;

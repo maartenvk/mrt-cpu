@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
 pub enum Opcode {
     HLT,
     LDI,
-    ADD
+    ADD,
+    SB,
+    LB
 }
 
 #[derive(Debug)]
@@ -21,6 +21,8 @@ impl TryFrom<&str> for Opcode {
             "HLT" => Opcode::HLT,
             "LDI" => Opcode::LDI,
             "ADD" => Opcode::ADD,
+            "SB" => Opcode::SB,
+            "LB" => Opcode::LB,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -36,6 +38,8 @@ impl TryFrom<u8> for Opcode {
             0 => Opcode::HLT,
             1 => Opcode::LDI,
             2 => Opcode::ADD,
+            3 => Opcode::SB,
+            4 => Opcode::LB,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 

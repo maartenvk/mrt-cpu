@@ -76,6 +76,7 @@ impl System {
         let reg3 = self.regs.get(reg3_raw);
 
         let imm = data;
+        let offset = (*reg2.unwrap_or(&0) as usize) << 8 | *reg3.unwrap_or(&0) as usize;
 
         match opcode {
             Opcode::HLT => {
@@ -89,6 +90,26 @@ impl System {
             Opcode::ADD => {
                 let addition = reg2.unwrap().overflowing_add(*reg3.unwrap());
                 self.regs[reg_raw] = addition.0;
+                self.ipc += 2;
+            },
+            Opcode::SB => {
+                let mut_access = self.ram.get_mut(offset);
+                if let Some(address) = mut_access {
+                    *address = *reg.unwrap();
+                } else {
+                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ipc);
+                }
+
+                self.ipc += 2;
+            },
+            Opcode::LB => {
+                let access = self.ram.get(offset);
+                if let Some(address) = access {
+                    self.regs[reg_raw] = *address;
+                } else {
+                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ipc);
+                }
+
                 self.ipc += 2;
             }
         };
