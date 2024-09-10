@@ -193,6 +193,11 @@ fn main() {
 
                 system.jump(address.unwrap());
             },
+            "disassemble" | "dis" => 'disassemble: {
+                let ip = system.get_ip() as u16;
+                let first_byte = system.get_rom(ip);
+                break 'disassemble;
+            },
             _ => {
                 println!("Unrecognized command");
             }
