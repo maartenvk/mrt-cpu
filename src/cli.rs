@@ -1,4 +1,4 @@
-use std::{any::type_name, fs::File, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{fs::File, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use crate::{compiler::Compiler, computer::System, types::Instruction};
 
@@ -9,9 +9,9 @@ pub struct Cli {
 
 #[derive(Debug)]
 pub enum CliError {
-    NoParameterProvidedFor(&'static str),
-    InvalidParameterTypeExpectedType(&'static str),
-    ParameterContractFailed(&'static str),
+    MissingParameter(&'static str),
+    InvalidParameterType(&'static str, &'static str),
+    FailedParameterConstraint(&'static str),
     FailedToReadFromFile,
     FailedToWriteToFile,
     OperationError,
@@ -28,7 +28,7 @@ impl Cli {
     pub fn load_rom(&mut self, command: Vec<&str>) -> Result<(), CliError> {
         let path = command.get(1);
         if path.is_none() {
-            return Err(CliError::NoParameterProvidedFor(stringify!(path)));
+            return Err(CliError::MissingParameter(stringify!(path)));
         }
 
         let rom = std::fs::read(Path::new(path.unwrap())); 
@@ -48,12 +48,12 @@ impl Cli {
     pub fn ram_size(&mut self, command: Vec<&str>) -> Result<(), CliError> {
         let size = command.get(1);
         if size.is_none() {
-            return Err(CliError::NoParameterProvidedFor(stringify!(size)));
+            return Err(CliError::MissingParameter(stringify!(size)));
         }
 
         let size = size.unwrap().parse::<usize>();
         if size.is_err() {
-            return Err(CliError::InvalidParameterTypeExpectedType(stringify!(usize)));
+            return Err(CliError::InvalidParameterType(stringify!(size), stringify!(usize)));
         }
 
         let result = self.system.load_ram(vec![0; size.unwrap()]);
@@ -70,7 +70,7 @@ impl Cli {
         let mut step_count = if step_count.is_some() {
             let step_count = step_count.unwrap().parse::<usize>();
             if step_count.is_err() {
-                return Err(CliError::InvalidParameterTypeExpectedType(stringify!(usize)));
+                return Err(CliError::InvalidParameterType(stringify!(step_count), stringify!(usize)));
             }
 
             step_count.unwrap()
@@ -111,7 +111,7 @@ impl Cli {
     pub fn compile(&mut self, command: Vec<&str>) -> Result<(), CliError> {
         let input_path = command.get(1);
         if input_path.is_none() {
-            return Err(CliError::NoParameterProvidedFor(stringify!(input_path)));
+            return Err(CliError::MissingParameter(stringify!(input_path)));
         }
 
         let output_path = command.get(2);
@@ -164,12 +164,12 @@ impl Cli {
     pub fn goto(&mut self, command: Vec<&str>) -> Result<(), CliError> {
         let address = command.get(1);
         if address.is_none() {
-            return Err(CliError::NoParameterProvidedFor(stringify!(address)));
+            return Err(CliError::MissingParameter(stringify!(address)));
         }
 
         let address = address.unwrap().parse::<u8>();
         if address.is_err() {
-            return Err(CliError::InvalidParameterTypeExpectedType(stringify!(u8)));
+            return Err(CliError::InvalidParameterType(stringify!(address), stringify!(u8)));
         }
 
         self.system.jump(address.unwrap());
@@ -206,19 +206,19 @@ impl Cli {
             let to = to.parse::<u16>();
         
             if from.is_err() {
-                return Err(CliError::InvalidParameterTypeExpectedType(stringify!(u16)));
+                return Err(CliError::InvalidParameterType(stringify!(from), stringify!(u16)));
             }
 
             let from = from.unwrap();
 
             if to.is_err() {
-                return Err(CliError::InvalidParameterTypeExpectedType(stringify!(u16)));
+                return Err(CliError::InvalidParameterType(stringify!(to), stringify!(u16)));
             }
 
             let to = to.unwrap();
 
             if from > to {
-                return Err(CliError::ParameterContractFailed(stringify!(from > to)))
+                return Err(CliError::FailedParameterConstraint(stringify!(from > to)))
             }
 
             let mut ip = from as u16;
@@ -228,7 +228,7 @@ impl Cli {
         } else if let Some(count) = from {
             let count = count.parse::<u16>();
             if count.is_err() {
-                return Err(CliError::InvalidParameterTypeExpectedType(stringify!(u16)));
+                return Err(CliError::InvalidParameterType(stringify!(count), stringify!(u16)));
             }
 
             let count = count.unwrap();
