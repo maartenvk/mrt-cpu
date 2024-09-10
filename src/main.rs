@@ -47,7 +47,7 @@ fn main() {
     continue, c - continue running until Ctrl+C
     compile, com [file] <out> - compile assembly file and output to `out'
     regs - print system registers
-    goto [address] - set ipc to address
+    goto [address] - set ip to address
                 ");
             },
             "exit" | "quit" => {
@@ -172,7 +172,7 @@ fn main() {
                     }
 
                     if y == 0 {
-                        print!("\tip={:#04x}", system.get_ipc());
+                        print!("\tip={:#04x}", system.get_ip());
                     }
 
                     println!();

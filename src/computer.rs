@@ -4,7 +4,7 @@ pub struct System {
     rom: Vec<u8>,
     ram: Vec<u8>,
     regs: [u8;16],
-    ipc: u8,
+    ip: u8,
 }
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl System {
             rom: vec![0u8; 1],
             ram: vec![0u8; ram_size],
             regs: [0;16],
-            ipc: 0
+            ip: 0
         }
     }
 
@@ -31,12 +31,12 @@ impl System {
         self.regs
     }
 
-    pub fn get_ipc(&self) -> u8 {
-        self.ipc
+    pub fn get_ip(&self) -> u8 {
+        self.ip
     }
 
     pub fn jump(&mut self, address: u8) {
-        self.ipc = address;
+        self.ip = address;
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
@@ -59,8 +59,8 @@ impl System {
 
     // returns true if halted
     pub fn tick(&mut self) -> bool {
-        let first_byte = *self.rom.get(self.ipc as usize).unwrap_or(&0);
-        let data = *self.rom.get(self.ipc as usize + 1).unwrap_or(&0);
+        let first_byte = *self.rom.get(self.ip as usize).unwrap_or(&0);
+        let data = *self.rom.get(self.ip as usize + 1).unwrap_or(&0);
 
         let opcode_raw = first_byte >> 4;
         let opcode = Opcode::try_from(opcode_raw);
@@ -83,37 +83,37 @@ impl System {
 
         match opcode {
             Opcode::HLT => {
-                println!("Info: halting at ip={}", self.ipc);
+                println!("Info: halting at ip={}", self.ip);
                 return true;
             },
             Opcode::LDI => {
                 self.regs[reg_raw] = imm;
-                self.ipc += 2;
+                self.ip += 2;
             },
             Opcode::ADD => {
                 let addition = reg2.unwrap().overflowing_add(*reg3.unwrap());
                 self.regs[reg_raw] = addition.0;
-                self.ipc += 2;
+                self.ip += 2;
             },
             Opcode::SB => {
                 let mut_access = self.ram.get_mut(offset);
                 if let Some(address) = mut_access {
                     *address = *reg.unwrap();
                 } else {
-                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ipc);
+                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ip);
                 }
 
-                self.ipc += 2;
+                self.ip += 2;
             },
             Opcode::LB => {
                 let access = self.ram.get(offset);
                 if let Some(address) = access {
                     self.regs[reg_raw] = *address;
                 } else {
-                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ipc);
+                    println!("Error: out of bounds memory access [{:#06x}] ip={}", offset, self.ip);
                 }
 
-                self.ipc += 2;
+                self.ip += 2;
             }
         };
 
