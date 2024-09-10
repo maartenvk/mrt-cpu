@@ -35,6 +35,9 @@ impl System {
         self.ipc
     }
 
+    pub fn jump(&mut self, address: u8) {
+        self.ipc = address;
+    }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
         if rom.is_empty() {

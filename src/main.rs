@@ -47,6 +47,7 @@ fn main() {
     continue, c - continue running until Ctrl+C
     compile, com [file] <out> - compile assembly file and output to `out'
     regs - print system registers
+    goto [address] - set ipc to address
                 ");
             },
             "exit" | "quit" => {
@@ -176,6 +177,21 @@ fn main() {
 
                     println!();
                 }
+            },
+            "goto" => 'goto: {
+                let address = command.get(1);
+                if address.is_none() {
+                    println!("Error: No address provided");
+                    break 'goto;
+                }
+
+                let address = address.unwrap().parse::<u8>();
+                if address.is_err() {
+                    println!("Error: Expected an 8-bit integer for address");
+                    break 'goto;
+                }
+
+                system.jump(address.unwrap());
             },
             _ => {
                 println!("Unrecognized command");
