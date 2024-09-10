@@ -46,6 +46,7 @@ fn main() {
     step, s <step_count> - step N amount of instructions
     continue, c - continue running until Ctrl+C
     compile, com [file] <out> - compile assembly file and output to `out'
+    regs - print system registers
                 ");
             },
             "exit" | "quit" => {
@@ -154,6 +155,17 @@ fn main() {
                     println!("Info: Compilation succesful, written to file: {}", output_path);
                 } else {
                     println!("Error: Compilation failed: {:?}", result.err().unwrap());
+                }
+            },
+            "regs" => {
+                let regs = system.get_regs();
+                for y in 0..4 {
+                    for x in 0..4 {
+                        let idx = y * 4 + x;
+                        print!("r{} = {:#02x} ", idx, regs[idx])
+                    }
+
+                    println!();
                 }
             },
             _ => {

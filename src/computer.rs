@@ -3,7 +3,7 @@ use crate::types::Opcode;
 pub struct System {
     rom: Vec<u8>,
     ram: Vec<u8>,
-    regs: [u8;8],
+    regs: [u8;16],
     ipc: u8,
 }
 
@@ -22,9 +22,13 @@ impl System {
         Self {
             rom: vec![0u8; 1],
             ram: vec![0u8; ram_size],
-            regs: [0;8],
+            regs: [0;16],
             ipc: 0
         }
+    }
+
+    pub fn get_regs(&self) -> [u8;16] {
+        self.regs
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
