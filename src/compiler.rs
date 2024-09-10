@@ -43,10 +43,14 @@ impl Instruction {
             Ok(Instruction::RegImm(opcode, reg(consumer)?, imm(consumer)?))
         };
 
+        let create_triple_reg = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
+            Ok(Instruction::TripleReg(opcode, reg(consumer)?, reg(consumer)?, reg(consumer)?))
+        };
+
         Ok(match opcode {
             Opcode::HLT => create_no_param(opcode),
             Opcode::LDI => create_reg_imm(opcode, &mut consumer)?,
-            _ => todo!()
+            Opcode::ADD => create_triple_reg(opcode, &mut consumer)?
         })
     }
 }
@@ -143,8 +147,7 @@ impl Compiler {
                 } else {
                     data.push(c);
                 }
-            },
-            _ => return Err(CompileError::UnhandledState(state))
+            }
         }
 
         Ok(Some(state))
@@ -223,8 +226,7 @@ impl Compiler {
                     }
 
                     tokens.push(Token::Immediate(number.unwrap()));
-                },
-                _ => return Err(CompileError::UnhandledState(state.clone()))
+                }
             }
         }
 

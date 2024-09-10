@@ -2,7 +2,8 @@
 #[derive(Clone, Copy, Debug)]
 pub enum Opcode {
     HLT,
-    LDI
+    LDI,
+    ADD
 }
 
 #[derive(Debug)]
@@ -17,6 +18,7 @@ impl TryFrom<&str> for Opcode {
         let result = match value.to_uppercase().as_str() {
             "HLT" => Opcode::HLT,
             "LDI" => Opcode::LDI,
+            "ADD" => Opcode::ADD,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -31,6 +33,7 @@ impl TryFrom<u8> for Opcode {
         let result = match value {
             0 => Opcode::HLT,
             1 => Opcode::LDI,
+            2 => Opcode::ADD,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 

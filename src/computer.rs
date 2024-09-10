@@ -64,11 +64,7 @@ impl System {
 
         let reg = self.regs.get(reg_raw);
         let reg2 = self.regs.get(reg2_raw);
-        let reg3= self.regs.get(reg3_raw);
-
-        let mut set_reg = |x: u8| {
-            self.regs[reg_raw] = x;
-        };
+        let reg3 = self.regs.get(reg3_raw);
 
         let imm = data;
 
@@ -78,11 +74,13 @@ impl System {
                 return true;
             },
             Opcode::LDI => {
-                set_reg(imm);
+                self.regs[reg_raw] = imm;
                 self.ipc += 2;
             },
-            _ => {
-                println!("Unhandled opcode {:?} at ip={}", opcode, self.ipc);
+            Opcode::ADD => {
+                let addition = reg2.unwrap().overflowing_add(*reg3.unwrap());
+                self.regs[reg_raw] = addition.0;
+                self.ipc += 2;
             }
         };
 
