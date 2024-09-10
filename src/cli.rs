@@ -1,4 +1,4 @@
-use std::{fs::File, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{any::type_name, fs::File, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use crate::{compiler::Compiler, computer::System, types::Instruction};
 
@@ -22,6 +22,14 @@ impl Cli {
         Self {
             system: System::new(64),
             interrupt
+        }
+    }
+
+    fn unpack<T: std::str::FromStr>(param_name: &'static str, string: &str) -> Result<T, CliError> {
+        if let Ok(n) = string.parse::<T>() {
+            Ok(n)
+        } else {
+            Err(CliError::InvalidParameterType(param_name, type_name::<T>()))
         }
     }
 
@@ -51,12 +59,8 @@ impl Cli {
             return Err(CliError::MissingParameter(stringify!(size)));
         }
 
-        let size = size.unwrap().parse::<usize>();
-        if size.is_err() {
-            return Err(CliError::InvalidParameterType(stringify!(size), stringify!(usize)));
-        }
-
-        let result = self.system.load_ram(vec![0; size.unwrap()]);
+        let size = Self::unpack::<usize>(stringify!(size), size.unwrap())?;
+        let result = self.system.load_ram(vec![0; size]);
         if result.is_err() {
             println!("Cli Operation Error: {:?}", result);
             return Err(CliError::OperationError);
@@ -68,12 +72,7 @@ impl Cli {
     pub fn step(&mut self, command: Vec<&str>) -> Result<(), CliError> {
         let step_count = command.get(1);
         let mut step_count = if step_count.is_some() {
-            let step_count = step_count.unwrap().parse::<usize>();
-            if step_count.is_err() {
-                return Err(CliError::InvalidParameterType(stringify!(step_count), stringify!(usize)));
-            }
-
-            step_count.unwrap()
+            Self::unpack::<usize>(stringify!(step_count), step_count.unwrap())?
         } else { 1 };
     
         while step_count > 0 {
@@ -167,55 +166,38 @@ impl Cli {
             return Err(CliError::MissingParameter(stringify!(address)));
         }
 
-        let address = address.unwrap().parse::<u8>();
-        if address.is_err() {
-            return Err(CliError::InvalidParameterType(stringify!(address), stringify!(u8)));
-        }
-
-        self.system.jump(address.unwrap());
+        let address = Self::unpack::<u8>(stringify!(address), address.unwrap())?;
+        self.system.jump(address);
         Ok(())
     }
 
+    fn disassemble_single(&self, ip: u16) -> u16 {
+        let first_byte = self.system.get_rom(ip);
+        let second_byte = self.system.get_rom(ip + 1);
+
+        let generated = Instruction::disassemble(first_byte, second_byte);
+    
+        if let Ok(instruction) = generated {
+            println!("{:#04x}: {}", ip, instruction);
+            
+            Instruction::get_length(match instruction {
+                Instruction::NoParam(opcode) => opcode,
+                Instruction::RegImm(opcode, _, _) => opcode,
+                Instruction::TripleReg(opcode, _, _, _) => opcode
+            })
+        } else {
+            println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
+            1
+        }
+    }
+
     pub fn disassemble(&self, command: Vec<&str>) -> Result<(), CliError> {
-        let disassemble = |ip: u16| -> u16 {
-            let first_byte = self.system.get_rom(ip);
-            let second_byte = self.system.get_rom(ip + 1);
-
-            let generated = Instruction::disassemble(first_byte, second_byte);
-        
-            if let Ok(instruction) = generated {
-                println!("{:#04x}: {}", ip, instruction);
-                
-                Instruction::get_length(match instruction {
-                    Instruction::NoParam(opcode) => opcode,
-                    Instruction::RegImm(opcode, _, _) => opcode,
-                    Instruction::TripleReg(opcode, _, _, _) => opcode
-                })
-            } else {
-                println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
-                1
-            }
-        };
-
         let from = command.get(1);
         let to = command.get(2);
 
         if let Some(to) = to {
-            let from = from.unwrap();
-            let from = from.parse::<u16>();
-            let to = to.parse::<u16>();
-        
-            if from.is_err() {
-                return Err(CliError::InvalidParameterType(stringify!(from), stringify!(u16)));
-            }
-
-            let from = from.unwrap();
-
-            if to.is_err() {
-                return Err(CliError::InvalidParameterType(stringify!(to), stringify!(u16)));
-            }
-
-            let to = to.unwrap();
+            let from = Self::unpack::<u16>(stringify!(from), from.unwrap())?;
+            let to = Self::unpack::<u16>(stringify!(to), to)?;
 
             if from > to {
                 return Err(CliError::FailedParameterConstraint(stringify!(from > to)))
@@ -223,22 +205,16 @@ impl Cli {
 
             let mut ip = from as u16;
             while ip < to {
-                ip += disassemble(ip);
+                ip += self.disassemble_single(ip);
             }
         } else if let Some(count) = from {
-            let count = count.parse::<u16>();
-            if count.is_err() {
-                return Err(CliError::InvalidParameterType(stringify!(count), stringify!(u16)));
-            }
-
-            let count = count.unwrap();
-
+            let count = Self::unpack::<u16>(stringify!(count), count)?;
             let mut ip = self.system.get_ip() as u16;
             for _ in 0..count {
-                ip += disassemble(ip);
+                ip += self.disassemble_single(ip);
             }
         } else {
-            _ = disassemble(self.system.get_ip() as u16);
+            _ = self.disassemble_single(self.system.get_ip() as u16);
         }
 
         Ok(())
