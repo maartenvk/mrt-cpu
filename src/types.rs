@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use crate::compiler::{CompileError, Token};
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
 pub enum Opcode {
@@ -145,4 +149,61 @@ pub enum Instruction {
     NoParam(Opcode),
     RegImm(Opcode, Register, u8),
     TripleReg(Opcode, Register, Register, Register)
+}
+
+impl Instruction {
+    pub fn disassemble(first_byte: u8, second_byte: u8) -> Result<Instruction, CompileError>{
+        let opcode_raw = first_byte >> 4;
+        let opcode = Opcode::try_from(opcode_raw);
+        if opcode.is_err() {
+            println!("Error: Disassembly failed: Unknown opcode {}", opcode_raw);
+            return Err(CompileError::UnexpectedEOF);
+        }
+
+        let opcode = opcode.unwrap();
+        let reg_raw = first_byte & 0b1111;
+
+        let get_reg = |raw: u8| {
+            if let Ok(result) = Register::try_from(raw) {
+                Ok(Token::Register(result))
+            } else {
+                Err(CompileError::UnexpectedEOF)
+            }
+        };
+
+        let imm = || {
+            Token::Immediate(second_byte)
+        };
+
+        let mut tokens = match Instruction::get_type(opcode) {
+            InstructionType::NoParam => vec![],
+            InstructionType::RegImm 
+             => vec![get_reg(reg_raw), Ok(imm())],
+            InstructionType::TripleReg
+             => vec![get_reg(reg_raw), get_reg(second_byte >> 4), get_reg(second_byte & 0b1111)]
+        }.into_iter();
+
+        let generated = Instruction::generate(opcode, || {
+            if let Some(token) = tokens.next() {
+                token
+            } else {
+                Err(CompileError::UnexpectedEOF)
+            }
+        });
+
+        Ok(generated?)
+    }
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoParam(opcode)
+                => write!(f, "{:?}", opcode),
+            Self::RegImm(opcode, reg, imm)
+                => write!(f, "{:?} {:?} {:#02x}", opcode, reg, imm),
+            Self::TripleReg(opcode, reg, regb, regc)
+                => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, regc)
+        }
+    }
 }

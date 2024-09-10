@@ -1,7 +1,8 @@
+use mrt_cpu::types::Instruction;
+use mrt_cpu::compiler::Compiler;
+use mrt_cpu::computer::*;
+
 use std::{fs::File, io::{self, stdout, BufRead, Write}, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
-
-use mrt_cpu::{compiler::{CompileError, Compiler, Token}, computer::*, types::{Instruction, InstructionType, Opcode, Register}};
-
 
 fn main() {
     println!("MRT-CPU CLI Utility
@@ -48,7 +49,7 @@ fn main() {
     compile, com [file] <out> - compile assembly file and output to `out'
     regs - print system registers
     goto [address] - set ip to address
-    disassemble, dis - disassemble instruction at ip
+    disassemble, dis <count|from> <to> - disassemble N instruction at ip or from range
                 ");
             },
             "exit" | "quit" => {
@@ -195,65 +196,72 @@ fn main() {
                 system.jump(address.unwrap());
             },
             "disassemble" | "dis" => 'disassemble: {
-                let ip = system.get_ip() as u16;
-                let first_byte = system.get_rom(ip);
-                let opcode_raw = first_byte >> 4;
-                let opcode = Opcode::try_from(opcode_raw);
-                if opcode.is_err() {
-                    println!("Error: Disassembly failed: Unknown opcode {}", opcode_raw);
-                    break 'disassemble;
-                }
+                let disassemble = |ip: u16| -> u16 {
+                    let first_byte = system.get_rom(ip);
+                    let second_byte = system.get_rom(ip + 1);
 
-                let opcode = opcode.unwrap();
-                let mut idx = 0;
-
-                let reg_raw = first_byte & 0b1111;
-
-                let get_reg = |raw: u8| {
-                    if let Ok(result) = Register::try_from(raw) {
-                        Ok(Token::Register(result))
+                    let generated = Instruction::disassemble(first_byte, second_byte);
+                
+                    if let Ok(instruction) = generated {
+                        println!("{:#04x}: {}", ip, instruction);
+                        
+                        Instruction::get_length(match instruction {
+                            Instruction::NoParam(opcode) => opcode,
+                            Instruction::RegImm(opcode, _, _) => opcode,
+                            Instruction::TripleReg(opcode, _, _, _) => opcode
+                        })
                     } else {
-                        Err(CompileError::UnexpectedEOF)
+                        println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
+                        1
                     }
                 };
 
-                let second_byte = system.get_rom(ip + 1);
+                let from = command.get(1);
+                let to = command.get(2);
 
-                let imm = || {
-                    Token::Immediate(second_byte)
-                };
+                if let Some(to) = to {
+                    let from = from.unwrap();
+                    let from = from.parse::<u16>();
+                    let to = to.parse::<u16>();
+                
+                    if from.is_err() {
+                        println!("Error: Expected an 16-bit integer for `from'");
+                        break 'disassemble;
+                    }
 
-                let generated = Instruction::generate(opcode, || {
-                    Ok(match Instruction::get_type(opcode) {
-                        InstructionType::NoParam => return Err(CompileError::UnexpectedEOF),
-                        InstructionType::RegImm => {
-                            let val = match idx {
-                                0 => get_reg(reg_raw)?,
-                                1 => imm(),
-                                _ => return Err(CompileError::UnexpectedEOF)
-                            };
+                    let from = from.unwrap();
 
-                            idx += 1;
-                            val
-                        },
-                        InstructionType::TripleReg => {
-                            let val = match idx {
-                                0 => get_reg(reg_raw)?,
-                                1 => get_reg(second_byte >> 4)?,
-                                2 => get_reg(second_byte & 0b1111)?,
-                                _ => return Err(CompileError::UnexpectedEOF)
-                            };
-                            
-                            idx += 1;
-                            val
-                        }
-                    })
-                });
+                    if to.is_err() {
+                        println!("Error: Expected an 16-bit integer for `to'");
+                        break 'disassemble;
+                    }
 
-                if let Ok(instruction) = generated {
-                    println!("{:#04x}: {:?}", ip, instruction);
+                    let to = to.unwrap();
+
+                    if from > to {
+                        println!("Error: `From' must be before `to'");
+                        break 'disassemble;
+                    }
+
+                    let mut ip = from as u16;
+                    while ip < to {
+                        ip += disassemble(ip);
+                    }
+                } else if let Some(count) = from {
+                    let count = count.parse::<u16>();
+                    if count.is_err() {
+                        println!("Error: Expected an 16-bit integer for `count'");
+                        break 'disassemble;
+                    }
+
+                    let count = count.unwrap();
+
+                    let mut ip = system.get_ip() as u16;
+                    for _ in 0..count {
+                        ip += disassemble(ip);
+                    }
                 } else {
-                    println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
+                    _ = disassemble(system.get_ip() as u16);
                 }
             },
             _ => {

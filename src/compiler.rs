@@ -30,6 +30,14 @@ impl Instruction {
         }
     }
 
+    pub fn get_length(opcode: Opcode) -> u16 {
+        match Self::get_type(opcode) {
+            InstructionType::NoParam => 1,
+            InstructionType::RegImm => 2,
+            InstructionType::TripleReg => 2
+        }
+    }
+
     pub fn generate<F>(opcode: Opcode, mut consumer: F) -> Result<Self, CompileError> where F: FnMut() -> Result<Token, CompileError> {
         let reg = |consume_token: &mut F| {
             match consume_token()? {
