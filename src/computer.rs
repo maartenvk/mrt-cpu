@@ -142,7 +142,7 @@ impl System {
 }
 
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Flags {
     Zero,
     Carry,
@@ -183,15 +183,21 @@ impl FlagsRegister {
         }
     }
 
+    pub fn is_set(&self, flag: Flags) -> bool {
+        self.flags[flag as usize]
+    }
+
     pub fn get_flags(&self) -> Vec<Flags> {
-        let mut flags = vec![];
+        let mut result = vec![];
 
-        if self.flags[0] { flags.push(Flags::Zero); }
-        if self.flags[1] { flags.push(Flags::Carry); }
-        if self.flags[2] { flags.push(Flags::Sign); }
-        if self.flags[3] { flags.push(Flags::Overflow); }
+        let flags = [Flags::Zero, Flags::Carry, Flags::Sign, Flags::Overflow];
+        for flag in flags {
+            if self.is_set(flag.clone()) {
+                result.push(flag);
+            }
+        }
 
-        flags
+        result
     }
 }
 
