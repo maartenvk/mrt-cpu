@@ -153,8 +153,9 @@ impl Cli {
             match y {
                 0 => print!("\tip={:#04x}", self.system.get_ip()),
                 1 => {
+                    print!("\t");
                     for flag in self.system.get_flags_register().get_flags() {
-                        print!("\t{} ", flag);
+                        print!("{}", flag);
                     }
                 },
                 _ => {}

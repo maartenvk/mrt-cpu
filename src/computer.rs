@@ -153,10 +153,10 @@ pub enum Flags {
 impl Display for Flags {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Flags::Zero     => "ZF",
-            Flags::Carry    => "CF",
-            Flags::Sign     => "SF",
-            Flags::Overflow => "OF"
+            Flags::Zero     => "Z",
+            Flags::Carry    => "C",
+            Flags::Sign     => "S",
+            Flags::Overflow => "O"
         })
     }
 }
