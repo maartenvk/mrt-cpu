@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use crate::types::Opcode;
 
@@ -152,11 +152,11 @@ pub enum Flags {
 
 impl Display for Flags {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Flags::Zero     => "Z",
-            Flags::Carry    => "C",
-            Flags::Sign     => "S",
-            Flags::Overflow => "O"
+        f.write_char(match self {
+            Flags::Zero     => 'Z',
+            Flags::Carry    => 'C',
+            Flags::Sign     => 'S',
+            Flags::Overflow => 'O'
         })
     }
 }
