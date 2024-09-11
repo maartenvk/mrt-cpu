@@ -150,8 +150,14 @@ impl Cli {
                 print!("r{} = {:#04x} ", idx, regs[idx])
             }
 
-            if y == 0 {
-                print!("\tip={:#04x}", self.system.get_ip());
+            match y {
+                0 => print!("\tip={:#04x}", self.system.get_ip()),
+                1 => {
+                    for flag in self.system.get_flags_register().get_flags() {
+                        print!("\t{} ", flag);
+                    }
+                },
+                _ => {}
             }
 
             println!();

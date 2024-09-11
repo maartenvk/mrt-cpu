@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::types::Opcode;
 
 pub struct System {
@@ -5,6 +7,7 @@ pub struct System {
     ram: Vec<u8>,
     regs: [u8;16],
     ip: u8,
+    flags: FlagsRegister
 }
 
 #[derive(Debug)]
@@ -23,7 +26,8 @@ impl System {
             rom: vec![0u8; 1],
             ram: vec![0u8; ram_size],
             regs: [0;16],
-            ip: 0
+            ip: 0,
+            flags: FlagsRegister::new()
         }
     }
 
@@ -55,6 +59,10 @@ impl System {
 
     pub fn get_ip(&self) -> u8 {
         self.ip
+    }
+
+    pub fn get_flags_register(&self) -> &FlagsRegister {
+        &self.flags
     }
 
     pub fn jump(&mut self, address: u8) {
@@ -113,8 +121,10 @@ impl System {
                 self.ip += 2;
             },
             Opcode::ADD => {
-                let addition = reg2.unwrap().overflowing_add(*reg3.unwrap());
-                self.regs[reg_raw] = addition.0;
+                let alu = ALU::add(*reg2.unwrap(), *reg3.unwrap());
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
                 self.ip += 2;
             },
             Opcode::SB => {
@@ -128,5 +138,103 @@ impl System {
         };
 
         false
+    }
+}
+
+#[repr(u8)]
+#[derive(Debug)]
+pub enum Flags {
+    Zero,
+    Carry,
+    Sign,
+    Overflow
+}
+
+impl Display for Flags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Flags::Zero     => "ZF",
+            Flags::Carry    => "CF",
+            Flags::Sign     => "SF",
+            Flags::Overflow => "OF"
+        })
+    }
+}
+
+pub struct FlagsRegister {
+    flags: [bool; 4]
+}
+
+impl FlagsRegister {
+    pub fn new() -> Self {
+        Self {
+            flags: [false; 4]
+        }
+    }
+
+    pub fn with_flags(flags: Vec<Flags>) -> Self {
+        let mut result = [false; 4];
+        for flag in flags {
+            result[flag as usize] = true;
+        }
+        
+        Self {
+            flags: result
+        }
+    }
+
+    pub fn get_flags(&self) -> Vec<Flags> {
+        let mut flags = vec![];
+
+        if self.flags[0] { flags.push(Flags::Zero); }
+        if self.flags[1] { flags.push(Flags::Carry); }
+        if self.flags[2] { flags.push(Flags::Sign); }
+        if self.flags[3] { flags.push(Flags::Overflow); }
+
+        flags
+    }
+}
+
+pub struct ALU {
+    result: u8,
+    flags: FlagsRegister
+}
+
+impl ALU {
+    fn is_signed(byte: u8) -> bool {
+        (byte & 0b1000_0000) > 0
+    }
+
+    fn flags_for_operation(a: u8, b: u8, result: (u8, bool)) -> FlagsRegister {
+        let mut flags = vec![];
+        if result.0 == 0 {
+            flags.push(Flags::Zero);
+        }
+
+        if result.1 {
+            flags.push(Flags::Carry);
+        }
+
+        if ALU::is_signed(result.0) {
+            flags.push(Flags::Sign);
+        }
+
+        // if both a, b are either signed or unsigned and different with result
+        if ALU::is_signed(a) == ALU::is_signed(b) &&
+            ALU::is_signed(a) != ALU::is_signed(result.0)
+        {
+            flags.push(Flags::Overflow);
+        }
+
+        FlagsRegister::with_flags(flags)
+    }
+
+    pub fn add(a: u8, b: u8) -> Self {
+        let result = a.overflowing_add(b);
+
+        Self {
+            result: result.0,
+            flags: Self::flags_for_operation(a, b, result)
+        }
     }
 }
