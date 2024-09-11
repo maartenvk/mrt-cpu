@@ -219,4 +219,58 @@ impl Cli {
 
         Ok(())
     }
+
+    pub fn read_memory(&self, command: Vec<&str>) -> Result<(), CliError> {
+        let address = command.get(1);
+        if address.is_none() {
+            return Err(CliError::MissingParameter(stringify!(address)));
+        }
+
+        let mut address = Self::unpack::<u16>(stringify!(address), address.unwrap())?;
+        
+        let count = command.get(2);
+        if let Some(count) = count {
+            let count = Self::unpack::<usize>(stringify!(count), count)?;
+            
+            for _ in 0..count {
+                let value = self.system.get_mem(address);
+                println!("[{:#06x}: {:#04x}]", address, value);
+                address += 1;
+            }
+        } else {
+            let value = self.system.get_mem(address);
+            println!("[{:#06x}]: {:#04x}", address, value);
+        }
+        
+        Ok(())
+    }
+
+    pub fn write_memory(&mut self, command: Vec<&str>) -> Result<(), CliError> {
+        let address = command.get(1);
+        if address.is_none() {
+            return Err(CliError::MissingParameter(stringify!(address)));
+        }
+
+        let byte = command.get(2);
+        if byte.is_none() {
+            return Err(CliError::MissingParameter(stringify!(byte)));
+        }
+
+        let mut address = Self::unpack::<u16>(stringify!(address), address.unwrap())?;
+        let byte = Self::unpack::<u8>(stringify!(byte), byte.unwrap())?;
+
+        let count = command.get(3);
+        if let Some(count) = count {
+            let count = Self::unpack::<usize>(stringify!(count), count)?;
+            
+            for _ in 0..count {
+                self.system.set_mem(address, byte);
+                address += 1;
+            }
+        } else {
+            self.system.set_mem(address, byte);
+        }
+        
+        Ok(())
+    }
 }

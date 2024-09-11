@@ -48,6 +48,8 @@ fn main() {
     regs - print system registers
     goto [address] - set ip to address
     disassemble, dis <count|from> <to> - disassemble N instruction at ip or from range
+    write, w [address] [byte] <count> - write byte N times at address in memory
+    read, r [address] <count> - read N bytes from address in memory
                 ");
                 Ok(())
             },
@@ -77,6 +79,12 @@ fn main() {
 
             "disassemble" | "dis"
              => cli.disassemble(command),
+
+            "read" | "r"
+             => cli.read_memory(command),
+
+            "write" | "w"
+             => cli.write_memory(command),
 
             _ => {
                 println!("Unrecognized command");
