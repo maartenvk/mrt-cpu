@@ -8,7 +8,7 @@ Variant **NoParam**:
 [opcode]------
 ```
 
-Variant **ImmReg**:
+Variant **RegImm**:
 ```
  0    3  4  7   8           15
 [opcode][reg1] [immediate     ]
