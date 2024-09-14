@@ -17,6 +17,10 @@ impl Instruction {
                 => vec![
                     (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4
                 ],
+            Self::DoubleRegImm4(opcode, reg, reg2, imm4)
+                => vec![
+                    (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4 | imm4
+                ],
             Self::TripleReg(opcode, reg, reg2, reg3)
                 => vec![
                     (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4 | *reg3 as u8
@@ -35,6 +39,8 @@ impl Instruction {
             Opcode::JAL => InstructionType::TripleReg,
             Opcode::XOR => InstructionType::TripleReg,
             Opcode::SUB => InstructionType::TripleReg,
+            Opcode::SHL => InstructionType::DoubleRegImm4,
+            Opcode::SHR => InstructionType::DoubleRegImm4,
         }
     }
 
@@ -43,6 +49,7 @@ impl Instruction {
             InstructionType::NoParam => 1,
             InstructionType::RegImm => 2,
             InstructionType::DoubleReg => 2,
+            InstructionType::DoubleRegImm4 => 2,
             InstructionType::TripleReg => 2
         }
     }
@@ -74,6 +81,10 @@ impl Instruction {
             Ok(Instruction::DoubleReg(opcode, reg(consumer)?, reg(consumer)?))
         };
 
+        let create_double_reg_imm4 = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
+            Ok(Instruction::DoubleRegImm4(opcode, reg(consumer)?, reg(consumer)?, imm(consumer)?))
+        };
+
         let create_triple_reg = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
             Ok(Instruction::TripleReg(opcode, reg(consumer)?, reg(consumer)?, reg(consumer)?))
         };
@@ -83,6 +94,7 @@ impl Instruction {
             InstructionType::NoParam => create_no_param(opcode),
             InstructionType::RegImm => create_reg_imm(opcode, &mut consumer)?,
             InstructionType::DoubleReg => create_double_reg(opcode, &mut consumer)?,
+            InstructionType::DoubleRegImm4 => create_double_reg_imm4(opcode, &mut consumer)?,
             InstructionType::TripleReg => create_triple_reg(opcode, &mut consumer)?
         })
     }

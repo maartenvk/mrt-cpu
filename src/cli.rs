@@ -191,6 +191,7 @@ impl Cli {
                 Instruction::NoParam(opcode) => opcode,
                 Instruction::RegImm(opcode, _, _) => opcode,
                 Instruction::DoubleReg(opcode, _, _) => opcode,
+                Instruction::DoubleRegImm4(opcode, _, _, _) => opcode,
                 Instruction::TripleReg(opcode, _, _, _) => opcode
             })
         } else {

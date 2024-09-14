@@ -7,6 +7,9 @@ XOR r0 r1 r0
 
 SUB r2 r1 r0
 
+SHL r0 r0 2
+SHR r1 r1 2
+
 # r0, r1 should be swapped.
 # r2 should be 245 - 34
 

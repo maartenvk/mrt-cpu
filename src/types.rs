@@ -13,7 +13,9 @@ pub enum Opcode {
     JNZ,
     JAL,
     XOR,
-    SUB
+    SUB,
+    SHL,
+    SHR
 }
 
 #[derive(Debug)]
@@ -35,6 +37,8 @@ impl TryFrom<&str> for Opcode {
             "JAL" => Opcode::JAL,
             "XOR" => Opcode::XOR,
             "SUB" => Opcode::SUB,
+            "SHL" => Opcode::SHL,
+            "SHR" => Opcode::SHR,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -56,6 +60,8 @@ impl TryFrom<u8> for Opcode {
             6 => Opcode::JAL,
             7 => Opcode::XOR,
             8 => Opcode::SUB,
+            9 => Opcode::SHL,
+            10 => Opcode::SHR,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -154,6 +160,7 @@ pub enum InstructionType {
     NoParam,
     RegImm,
     DoubleReg,
+    DoubleRegImm4,
     TripleReg
 }
 
@@ -162,6 +169,7 @@ pub enum Instruction {
     NoParam(Opcode),
     RegImm(Opcode, Register, u8),
     DoubleReg(Opcode, Register, Register),
+    DoubleRegImm4(Opcode, Register, Register, u8),
     TripleReg(Opcode, Register, Register, Register)
 }
 
@@ -189,6 +197,10 @@ impl Instruction {
             Token::Immediate(second_byte)
         };
 
+        let imm4 = || {
+            Token::Immediate(second_byte & 0b1111)
+        };
+
         let mut tokens = match Instruction::get_type(opcode) {
             InstructionType::NoParam
              => vec![],
@@ -198,6 +210,9 @@ impl Instruction {
 
             InstructionType::DoubleReg
              => vec![get_reg(reg_raw), get_reg(second_byte >> 4)],
+
+            InstructionType::DoubleRegImm4
+             => vec![get_reg(reg_raw), get_reg(second_byte >> 4), Ok(imm4())],
 
             InstructionType::TripleReg
              => vec![get_reg(reg_raw), get_reg(second_byte >> 4), get_reg(second_byte & 0b1111)]
@@ -226,6 +241,9 @@ impl Display for Instruction {
 
             Self::DoubleReg(opcode, reg, regb)
                 => write!(f, "{:?} {:?} {:?}", opcode, reg, regb),
+
+            Self::DoubleRegImm4(opcode, reg, regb, imm4)
+                => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, imm4),
 
             Self::TripleReg(opcode, reg, regb, regc)
                 => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, regc)

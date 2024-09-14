@@ -109,6 +109,8 @@ impl System {
         let reg3 = self.regs.get(reg3_raw);
 
         let imm = data;
+        let imm4 = data & 0b1111;
+
         let offset = (*reg2.unwrap_or(&0) as usize) << 8 | *reg3.unwrap_or(&0) as usize;
 
         match opcode {
@@ -167,6 +169,20 @@ impl System {
                 self.regs[reg_raw] = alu.result;
                 self.ip += 2;
             },
+            Opcode::SHL => {
+                let alu = ALU::shl(*reg2.unwrap(), imm4);
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
+            },
+            Opcode::SHR => {
+                let alu = ALU::shr(*reg2.unwrap(), imm4);
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
+            }
         };
 
         false
@@ -291,6 +307,24 @@ impl ALU {
         Self {
             result,
             flags: Self::flags_for_operation(a, b, (result, false))
+        }
+    }
+
+    pub fn shl(a: u8, b: u8) -> Self {
+        let result = a.overflowing_shl(b as u32);
+
+        Self {
+            result: result.0,
+            flags: Self::flags_for_operation(a, b, result)
+        }
+    }
+
+    pub fn shr(a: u8, b: u8) -> Self {
+        let result = a.overflowing_shr(b as u32);
+
+        Self {
+            result: result.0,
+            flags: Self::flags_for_operation(a, b, result)
         }
     }
 }
