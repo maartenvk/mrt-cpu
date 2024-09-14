@@ -86,6 +86,13 @@ impl System {
         self.ram = ram;
         Ok(())
     }
+
+    fn alu_operation<F>(&mut self, destination_raw_reg: usize, a: u8, b: u8, operation: F) where F: Fn(u8, u8) -> ALU {
+        let alu = operation(a, b);
+        self.flags = alu.flags;
+
+        self.regs[destination_raw_reg] = alu.result;
+    }
     
     // returns true if halted
     pub fn tick(&mut self) -> bool {
@@ -120,14 +127,15 @@ impl System {
                 println!("Info: halting at ip={}", self.ip);
                 return true;
             },
+            Opcode::ADD => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::add),
+            Opcode::XOR => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::xor),
+            Opcode::SUB => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::sub),
+            Opcode::SHL => self.alu_operation(reg_raw, *reg2.unwrap(),  imm4, ALU::shl),
+            Opcode::SHR => self.alu_operation(reg_raw, *reg2.unwrap(), imm4, ALU::shr),
+            Opcode::AND => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::and),
+            Opcode::OR => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::or),
             Opcode::LDI => {
                 self.regs[reg_raw] = imm;
-            },
-            Opcode::ADD => {
-                let alu = ALU::add(*reg2.unwrap(), *reg3.unwrap());
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
             },
             Opcode::SB => {
                 self.set_mem(offset as u16, *reg.unwrap());
@@ -149,30 +157,6 @@ impl System {
 
                 self.ip = new_ip;
             },
-            Opcode::XOR => {
-                let alu = ALU::xor(*reg2.unwrap(), *reg3.unwrap());
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            },
-            Opcode::SUB => {
-                let alu = ALU::sub(*reg2.unwrap(), *reg3.unwrap());
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            },
-            Opcode::SHL => {
-                let alu = ALU::shl(*reg2.unwrap(), imm4);
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            },
-            Opcode::SHR => {
-                let alu = ALU::shr(*reg2.unwrap(), imm4);
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            },
             Opcode::JC => {
                 let cf_set = self.flags.is_set(Flags::Carry);
                 if cf_set {
@@ -182,18 +166,6 @@ impl System {
             Opcode::NOT => {
                 self.regs[reg_raw] = !*reg2.unwrap();
             },
-            Opcode::AND => {
-                let alu = ALU::and(*reg2.unwrap(), *reg3.unwrap());
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            },
-            Opcode::OR => {
-                let alu = ALU::or(*reg2.unwrap(), *reg3.unwrap());
-                self.flags = alu.flags;
-
-                self.regs[reg_raw] = alu.result;
-            }
         };
 
         false
