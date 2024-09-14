@@ -1,3 +1,14 @@
+LDI r0 245
+LDI r1 34
+
+XOR r0 r1 r0
+XOR r1 r0 r1
+XOR r0 r1 r0
+
+# r0, r1 should be swapped.
+
+HLT
+
 LDI r2 0 # 0 extend
 LDI r3 8
 

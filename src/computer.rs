@@ -153,6 +153,13 @@ impl System {
 
                 self.ip = new_ip;
             },
+            Opcode::XOR => {
+                let alu = ALU::xor(*reg2.unwrap(), *reg3.unwrap());
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
+            },
         };
 
         false
@@ -259,6 +266,15 @@ impl ALU {
         Self {
             result: result.0,
             flags: Self::flags_for_operation(a, b, result)
+        }
+    }
+
+    pub fn xor(a: u8, b: u8) -> Self {
+        let result = a ^ b;
+
+        Self {
+            result,
+            flags: Self::flags_for_operation(a, b, (result, false))
         }
     }
 }

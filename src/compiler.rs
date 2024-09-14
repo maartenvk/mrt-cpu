@@ -33,6 +33,7 @@ impl Instruction {
             Opcode::LB => InstructionType::TripleReg,
             Opcode::JNZ => InstructionType::DoubleReg,
             Opcode::JAL => InstructionType::TripleReg,
+            Opcode::XOR => InstructionType::TripleReg,
         }
     }
 
