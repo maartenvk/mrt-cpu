@@ -203,15 +203,12 @@ impl FlagsRegister {
         }
     }
 
-    pub fn with_flags(flags: Vec<Flags>) -> Self {
-        let mut result = [false; 4];
-        for flag in flags {
-            result[flag as usize] = true;
-        }
-        
-        Self {
-            flags: result
-        }
+    pub fn set(&mut self, flag: Flags) {
+        self.flags[flag as usize] = true;
+    }
+
+    pub fn unset(&mut self, flag: Flags) {
+        self.flags[flag as usize] = false;
     }
 
     pub fn is_set(&self, flag: Flags) -> bool {
@@ -243,27 +240,27 @@ impl ALU {
     }
 
     fn flags_for_operation(a: u8, b: u8, result: (u8, bool)) -> FlagsRegister {
-        let mut flags = vec![];
+        let mut flags = FlagsRegister::new();
         if result.0 == 0 {
-            flags.push(Flags::Zero);
+            flags.set(Flags::Zero);
         }
 
         if result.1 {
-            flags.push(Flags::Carry);
+            flags.set(Flags::Carry);
         }
 
         if ALU::is_signed(result.0) {
-            flags.push(Flags::Sign);
+            flags.set(Flags::Sign);
         }
 
         // if both a, b are either signed or unsigned and different with result
         if ALU::is_signed(a) == ALU::is_signed(b) &&
             ALU::is_signed(a) != ALU::is_signed(result.0)
         {
-            flags.push(Flags::Overflow);
+            flags.set(Flags::Overflow);
         }
 
-        FlagsRegister::with_flags(flags)
+        flags
     }
 
     pub fn add(a: u8, b: u8) -> Self {
