@@ -190,6 +190,7 @@ impl Cli {
             Instruction::get_length(match instruction {
                 Instruction::NoParam(opcode) => opcode,
                 Instruction::RegImm(opcode, _, _) => opcode,
+                Instruction::DoubleReg(opcode, _, _) => opcode,
                 Instruction::TripleReg(opcode, _, _, _) => opcode
             })
         } else {

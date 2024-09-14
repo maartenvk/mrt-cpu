@@ -6,7 +6,7 @@ pub struct System {
     rom: Vec<u8>,
     ram: Vec<u8>,
     regs: [u8;16],
-    ip: u8,
+    ip: u16,
     flags: FlagsRegister
 }
 
@@ -57,7 +57,7 @@ impl System {
         self.regs
     }
 
-    pub fn get_ip(&self) -> u8 {
+    pub fn get_ip(&self) -> u16 {
         self.ip
     }
 
@@ -66,7 +66,7 @@ impl System {
     }
 
     pub fn jump(&mut self, address: u8) {
-        self.ip = address;
+        self.ip = address as u16;
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
@@ -134,6 +134,14 @@ impl System {
             Opcode::LB => {
                 self.regs[reg_raw] = self.get_mem(offset as u16);
                 self.ip += 2;
+            },
+            Opcode::JNZ => {
+                let zf_set = self.flags.is_set(Flags::Zero);
+                if !zf_set {
+                    self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
+                } else {
+                    self.ip += 2;
+                }
             }
         };
 

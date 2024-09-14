@@ -13,6 +13,10 @@ impl Instruction {
                 => vec![
                     (*opcode as u8) << 4 | *reg as u8, *imm
                 ],
+            Self::DoubleReg(opcode, reg, reg2)
+                => vec![
+                    (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4
+                ],
             Self::TripleReg(opcode, reg, reg2, reg3)
                 => vec![
                     (*opcode as u8) << 4 | *reg as u8, (*reg2 as u8) << 4 | *reg3 as u8
@@ -26,7 +30,8 @@ impl Instruction {
             Opcode::LDI => InstructionType::RegImm,
             Opcode::ADD => InstructionType::TripleReg,
             Opcode::SB => InstructionType::TripleReg,
-            Opcode::LB => InstructionType::TripleReg
+            Opcode::LB => InstructionType::TripleReg,
+            Opcode::JNZ => InstructionType::DoubleReg,
         }
     }
 
@@ -34,6 +39,7 @@ impl Instruction {
         match Self::get_type(opcode) {
             InstructionType::NoParam => 1,
             InstructionType::RegImm => 2,
+            InstructionType::DoubleReg => 2,
             InstructionType::TripleReg => 2
         }
     }
@@ -61,6 +67,10 @@ impl Instruction {
             Ok(Instruction::RegImm(opcode, reg(consumer)?, imm(consumer)?))
         };
 
+        let create_double_reg = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
+            Ok(Instruction::DoubleReg(opcode, reg(consumer)?, reg(consumer)?))
+        };
+
         let create_triple_reg = |opcode, consumer: &mut F| -> Result<Instruction, CompileError> {
             Ok(Instruction::TripleReg(opcode, reg(consumer)?, reg(consumer)?, reg(consumer)?))
         };
@@ -69,6 +79,7 @@ impl Instruction {
         Ok(match itype {
             InstructionType::NoParam => create_no_param(opcode),
             InstructionType::RegImm => create_reg_imm(opcode, &mut consumer)?,
+            InstructionType::DoubleReg => create_double_reg(opcode, &mut consumer)?,
             InstructionType::TripleReg => create_triple_reg(opcode, &mut consumer)?
         })
     }

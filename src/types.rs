@@ -9,7 +9,8 @@ pub enum Opcode {
     LDI,
     ADD,
     SB,
-    LB
+    LB,
+    JNZ
 }
 
 #[derive(Debug)]
@@ -27,6 +28,7 @@ impl TryFrom<&str> for Opcode {
             "ADD" => Opcode::ADD,
             "SB" => Opcode::SB,
             "LB" => Opcode::LB,
+            "JNZ" => Opcode::JNZ,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -44,6 +46,7 @@ impl TryFrom<u8> for Opcode {
             2 => Opcode::ADD,
             3 => Opcode::SB,
             4 => Opcode::LB,
+            5 => Opcode::JNZ,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -141,6 +144,7 @@ impl TryFrom<u8> for Register {
 pub enum InstructionType {
     NoParam,
     RegImm,
+    DoubleReg,
     TripleReg
 }
 
@@ -148,6 +152,7 @@ pub enum InstructionType {
 pub enum Instruction {
     NoParam(Opcode),
     RegImm(Opcode, Register, u8),
+    DoubleReg(Opcode, Register, Register),
     TripleReg(Opcode, Register, Register, Register)
 }
 
@@ -176,9 +181,15 @@ impl Instruction {
         };
 
         let mut tokens = match Instruction::get_type(opcode) {
-            InstructionType::NoParam => vec![],
+            InstructionType::NoParam
+             => vec![],
+
             InstructionType::RegImm 
              => vec![get_reg(reg_raw), Ok(imm())],
+
+            InstructionType::DoubleReg
+             => vec![get_reg(reg_raw), get_reg(second_byte >> 4)],
+
             InstructionType::TripleReg
              => vec![get_reg(reg_raw), get_reg(second_byte >> 4), get_reg(second_byte & 0b1111)]
         }.into_iter();
@@ -200,8 +211,13 @@ impl Display for Instruction {
         match self {
             Self::NoParam(opcode)
                 => write!(f, "{:?}", opcode),
+
             Self::RegImm(opcode, reg, imm)
                 => write!(f, "{:?} {:?} {:#02x}", opcode, reg, imm),
+
+            Self::DoubleReg(opcode, reg, regb)
+                => write!(f, "{:?} {:?} {:?}", opcode, reg, regb),
+
             Self::TripleReg(opcode, reg, regb, regc)
                 => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, regc)
         }
