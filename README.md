@@ -10,24 +10,24 @@ Variant **NoParam**:
 
 Variant **RegImm**:
 ```
- 0    3  4  7   8           15
-[opcode][reg1] [immediate     ]
+ 0    3   4   7   8           15
+[opcode] [reg1 ] [immediate     ]
 ```
 
 Variant **DoubleReg**:
 ```
- 0    3  4  7   8   11  12  15
-[opcode][reg1] [reg2  ]--------
+ 0    3   4   7   8  11  12  15
+[opcode] [reg1 ] [reg2 ]--------
 ```
 
 Variant **DoubleRegImm4**:
 ```
- 0    3  4  7   8   11  12  15
-[opcode][reg1] [reg2  ] [imm4 ] 
+ 0    3   4   7   8  11   12  15
+[opcode] [reg1 ] [reg2 ] [imm4  ] 
 ```
 
 Variant **TripleReg**:
 ```
- 0    3  4  7   8   11  12  15
-[opcode][reg1] [reg2  ][reg3  ]
+ 0    3   4   7   8  11   12  15
+[opcode] [reg1 ] [reg2 ] [reg3  ]
 ```
