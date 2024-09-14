@@ -15,7 +15,8 @@ pub enum Opcode {
     XOR,
     SUB,
     SHL,
-    SHR
+    SHR,
+    JC
 }
 
 #[derive(Debug)]
@@ -39,6 +40,7 @@ impl TryFrom<&str> for Opcode {
             "SUB" => Opcode::SUB,
             "SHL" => Opcode::SHL,
             "SHR" => Opcode::SHR,
+            "JC" => Opcode::JC,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -62,6 +64,7 @@ impl TryFrom<u8> for Opcode {
             8 => Opcode::SUB,
             9 => Opcode::SHL,
             10 => Opcode::SHR,
+            11 => Opcode::JC,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 

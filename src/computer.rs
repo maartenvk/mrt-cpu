@@ -182,6 +182,14 @@ impl System {
 
                 self.regs[reg_raw] = alu.result;
                 self.ip += 2;
+            },
+            Opcode::JC => {
+                let cf_set = self.flags.is_set(Flags::Carry);
+                if cf_set {
+                    self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
+                } else {
+                    self.ip += 2;
+                }
             }
         };
 
