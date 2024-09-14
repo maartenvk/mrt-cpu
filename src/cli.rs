@@ -231,6 +231,10 @@ impl Cli {
         Ok(())
     }
 
+    fn print_single_read_memory(&self, address: u16, value: u8) {
+        println!("[{:#06x}]: {:#04x}, {:#3}, '{}'", address, value, value, value as char);
+    }
+
     pub fn read_memory(&self, command: Vec<&str>) -> Result<(), CliError> {
         let address = command.get(1);
         if address.is_none() {
@@ -245,12 +249,12 @@ impl Cli {
             
             for _ in 0..count {
                 let value = self.system.get_mem(address);
-                println!("[{:#06x}: {:#04x}]", address, value);
+                self.print_single_read_memory(address, value);
                 address += 1;
             }
         } else {
             let value = self.system.get_mem(address);
-            println!("[{:#06x}]: {:#04x}", address, value);
+            self.print_single_read_memory(address, value);
         }
         
         Ok(())
