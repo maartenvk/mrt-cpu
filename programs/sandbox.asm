@@ -40,7 +40,6 @@ LDI r3 8
 LDI r0 0 
 LDI r1 1
 
-# lives at ip=8, see r3
 LDI r5 0
 LDI r6 17
 JAL r4 r5 r6
