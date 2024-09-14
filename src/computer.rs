@@ -190,6 +190,24 @@ impl System {
                 } else {
                     self.ip += 2;
                 }
+            },
+            Opcode::NOT => {
+                self.regs[reg_raw] = !*reg2.unwrap();
+                self.ip += 2;
+            },
+            Opcode::AND => {
+                let alu = ALU::and(*reg2.unwrap(), *reg3.unwrap());
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
+            },
+            Opcode::OR => {
+                let alu = ALU::or(*reg2.unwrap(), *reg3.unwrap());
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
             }
         };
 
@@ -306,6 +324,24 @@ impl ALU {
         Self {
             result: result.0,
             flags: Self::flags_for_operation(a, b, result)
+        }
+    }
+
+    pub fn and(a: u8, b: u8) -> Self {
+        let result = a & b;
+
+        Self {
+            result,
+            flags: Self::flags_for_operation(a, b, (result, false))
+        }
+    }
+
+    pub fn or(a: u8, b: u8) -> Self {
+        let result = a | b;
+
+        Self {
+            result,
+            flags: Self::flags_for_operation(a, b, (result, false))
         }
     }
 

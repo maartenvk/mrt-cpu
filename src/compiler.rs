@@ -42,6 +42,9 @@ impl Instruction {
             Opcode::SHL => InstructionType::DoubleRegImm4,
             Opcode::SHR => InstructionType::DoubleRegImm4,
             Opcode::JC => InstructionType::DoubleReg,
+            Opcode::NOT => InstructionType::DoubleReg,
+            Opcode::AND => InstructionType::TripleReg,
+            Opcode::OR => InstructionType::TripleReg,
         }
     }
 
