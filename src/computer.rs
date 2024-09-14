@@ -142,7 +142,17 @@ impl System {
                 } else {
                     self.ip += 2;
                 }
-            }
+            },
+            Opcode::JAL => {
+                let new_ip = offset as u16;
+
+                self.ip += 2; // Account for current instruction
+
+                self.regs[reg_raw] = (self.ip >> 8) as u8;
+                self.regs[reg2_raw] = self.ip as u8;
+
+                self.ip = new_ip;
+            },
         };
 
         false

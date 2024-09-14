@@ -10,7 +10,8 @@ pub enum Opcode {
     ADD,
     SB,
     LB,
-    JNZ
+    JNZ,
+    JAL
 }
 
 #[derive(Debug)]
@@ -29,6 +30,7 @@ impl TryFrom<&str> for Opcode {
             "SB" => Opcode::SB,
             "LB" => Opcode::LB,
             "JNZ" => Opcode::JNZ,
+            "JAL" => Opcode::JAL,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
@@ -47,6 +49,7 @@ impl TryFrom<u8> for Opcode {
             3 => Opcode::SB,
             4 => Opcode::LB,
             5 => Opcode::JNZ,
+            6 => Opcode::JAL,
             _ => return Err(OpcodeConversionError::NoSuchOpcode)
         };
 
