@@ -25,8 +25,10 @@ impl Cli {
         }
     }
 
-    fn unpack<T: std::str::FromStr>(param_name: &'static str, string: &str) -> Result<T, CliError> {
+    fn unpack<T: std::str::FromStr + num_traits::Num>(param_name: &'static str, string: &str) -> Result<T, CliError> {
         if let Ok(n) = string.parse::<T>() {
+            Ok(n)
+        } else if let Ok(n) = T::from_str_radix(string.trim_start_matches("0x"), 16) {
             Ok(n)
         } else {
             Err(CliError::InvalidParameterType(param_name, type_name::<T>()))
