@@ -1,3 +1,5 @@
+LDI r0 0xFF
+
 LDI r0 245
 LDI r1 34
 

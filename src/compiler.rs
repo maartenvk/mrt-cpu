@@ -161,7 +161,11 @@ impl Compiler {
                 }
             },
             CompilationState::Numeric(ref mut data) => {
-                if !c.is_ascii_digit() || c == '.' && data.contains(&'.') {
+                if  !(c.is_ascii_digit() || 
+                        ('a'..='f').contains(&c) || 
+                        ('A'..='F').contains(&c) || 
+                        (c == 'x' && !data.is_empty() && data[0] == '0')
+                    ) || (c == '.' && data.contains(&'.'))  {
                     self.collected_states.push(state);
                     return Ok(None);
                 } else {
@@ -242,9 +246,16 @@ impl Compiler {
                 },
                 CompilationState::Numeric(data) => {
                     let str = String::from_iter(data);
-                    let number = str.parse::<u8>();
+                    let mut number = str.parse::<u8>();
                     if number.is_err() {
-                        return Err(CompileError::InvalidNumber(str))
+                        if data.len() > 2 && data[0] == '0' && data[1] == 'x' {
+                            number = u8::from_str_radix(str.trim_start_matches("0x"), 16);
+                        }
+                    
+                        // second pass
+                        if number.is_err() {
+                            return Err(CompileError::InvalidNumber(str))
+                        }
                     }
 
                     tokens.push(Token::Immediate(number.unwrap()));
