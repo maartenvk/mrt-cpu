@@ -5,7 +5,10 @@ XOR r0 r1 r0
 XOR r1 r0 r1
 XOR r0 r1 r0
 
+SUB r2 r1 r0
+
 # r0, r1 should be swapped.
+# r2 should be 245 - 34
 
 HLT
 

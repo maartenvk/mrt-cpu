@@ -160,6 +160,13 @@ impl System {
                 self.regs[reg_raw] = alu.result;
                 self.ip += 2;
             },
+            Opcode::SUB => {
+                let alu = ALU::sub(*reg2.unwrap(), *reg3.unwrap());
+                self.flags = alu.flags;
+
+                self.regs[reg_raw] = alu.result;
+                self.ip += 2;
+            },
         };
 
         false
@@ -262,6 +269,15 @@ impl ALU {
 
     pub fn add(a: u8, b: u8) -> Self {
         let result = a.overflowing_add(b);
+
+        Self {
+            result: result.0,
+            flags: Self::flags_for_operation(a, b, result)
+        }
+    }
+
+    pub fn sub(a: u8, b: u8) -> Self {
+        let result = a.overflowing_sub(b);
 
         Self {
             result: result.0,
