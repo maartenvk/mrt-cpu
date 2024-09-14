@@ -225,9 +225,7 @@ impl Compiler {
 
         for state in &self.collected_states {
             match state {
-                CompilationState::Comment(data) => {
-                    println!("Info: Comment: {}", String::from_iter(data));
-                },
+                CompilationState::Comment(_) => {},
                 CompilationState::Symbol(data) => {
                     let data_str = String::from_iter(data);
                     let result = Opcode::try_from(data_str.as_str());
@@ -280,8 +278,6 @@ impl Compiler {
                     };
 
                     let instruction = Instruction::generate(*opcode, &mut token_consumer)?;
-                    println!("Info: generated {:?}", instruction);
-
                     self.generated.instructions.push(instruction);
                     control_token = None;
 
