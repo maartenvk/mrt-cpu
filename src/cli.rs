@@ -147,7 +147,8 @@ impl Cli {
                     print!(" ");
                 }
 
-                print!("r{} = {:#04x} ", idx, regs[idx])
+                let val = regs[idx];
+                print!("r{} = {:#04x}, {:#3}, '{}'\t", idx, val, val, val as char)
             }
 
             match y {
