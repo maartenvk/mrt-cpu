@@ -1,6 +1,6 @@
 use std::fmt::{Display, Write};
 
-use crate::types::Opcode;
+use crate::types::{Instruction, Opcode};
 
 pub struct System {
     rom: Vec<u8>,
@@ -86,7 +86,7 @@ impl System {
         self.ram = ram;
         Ok(())
     }
-
+    
     // returns true if halted
     pub fn tick(&mut self) -> bool {
         let first_byte = *self.rom.get(self.ip as usize).unwrap_or(&0);
@@ -113,42 +113,36 @@ impl System {
 
         let offset = (*reg2.unwrap_or(&0) as usize) << 8 | *reg3.unwrap_or(&0) as usize;
 
+        self.ip += Instruction::get_length(opcode);
         match opcode {
             Opcode::HLT => {
+                self.ip -= Instruction::get_length(Opcode::HLT); // Undo goto next instruction
                 println!("Info: halting at ip={}", self.ip);
                 return true;
             },
             Opcode::LDI => {
                 self.regs[reg_raw] = imm;
-                self.ip += 2;
             },
             Opcode::ADD => {
                 let alu = ALU::add(*reg2.unwrap(), *reg3.unwrap());
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::SB => {
                 self.set_mem(offset as u16, *reg.unwrap());
-                self.ip += 2;
             },
             Opcode::LB => {
                 self.regs[reg_raw] = self.get_mem(offset as u16);
-                self.ip += 2;
             },
             Opcode::JNZ => {
                 let zf_set = self.flags.is_set(Flags::Zero);
                 if !zf_set {
                     self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
-                } else {
-                    self.ip += 2;
                 }
             },
             Opcode::JAL => {
                 let new_ip = offset as u16;
-
-                self.ip += 2; // Account for current instruction
 
                 self.regs[reg_raw] = (self.ip >> 8) as u8;
                 self.regs[reg2_raw] = self.ip as u8;
@@ -160,54 +154,45 @@ impl System {
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::SUB => {
                 let alu = ALU::sub(*reg2.unwrap(), *reg3.unwrap());
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::SHL => {
                 let alu = ALU::shl(*reg2.unwrap(), imm4);
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::SHR => {
                 let alu = ALU::shr(*reg2.unwrap(), imm4);
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::JC => {
                 let cf_set = self.flags.is_set(Flags::Carry);
                 if cf_set {
                     self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
-                } else {
-                    self.ip += 2;
                 }
             },
             Opcode::NOT => {
                 self.regs[reg_raw] = !*reg2.unwrap();
-                self.ip += 2;
             },
             Opcode::AND => {
                 let alu = ALU::and(*reg2.unwrap(), *reg3.unwrap());
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             },
             Opcode::OR => {
                 let alu = ALU::or(*reg2.unwrap(), *reg3.unwrap());
                 self.flags = alu.flags;
 
                 self.regs[reg_raw] = alu.result;
-                self.ip += 2;
             }
         };
 
