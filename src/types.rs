@@ -240,6 +240,36 @@ impl Instruction {
 
         Ok(generated?)
     }
+
+    pub fn get_type(opcode: Opcode) -> InstructionType {
+        match opcode {
+            Opcode::HLT => InstructionType::NoParam,
+            Opcode::LDI => InstructionType::RegImm,
+            Opcode::ADD => InstructionType::TripleReg,
+            Opcode::SB => InstructionType::TripleReg,
+            Opcode::LB => InstructionType::TripleReg,
+            Opcode::JNZ => InstructionType::DoubleReg,
+            Opcode::JAL => InstructionType::TripleReg,
+            Opcode::XOR => InstructionType::TripleReg,
+            Opcode::SUB => InstructionType::TripleReg,
+            Opcode::SHL => InstructionType::DoubleRegImm4,
+            Opcode::SHR => InstructionType::DoubleRegImm4,
+            Opcode::JC => InstructionType::DoubleReg,
+            Opcode::NOT => InstructionType::DoubleReg,
+            Opcode::AND => InstructionType::TripleReg,
+            Opcode::OR => InstructionType::TripleReg,
+        }
+    }
+
+    pub fn get_length(opcode: Opcode) -> u16 {
+        match Self::get_type(opcode) {
+            InstructionType::NoParam => 1,
+            InstructionType::RegImm => 2,
+            InstructionType::DoubleReg => 2,
+            InstructionType::DoubleRegImm4 => 2,
+            InstructionType::TripleReg => 2
+        }
+    }
 }
 
 impl Display for Instruction {
