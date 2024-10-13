@@ -26,7 +26,7 @@ pub struct FlagsRegister {
 
 impl FlagsRegister {
     pub fn new() -> Self {
-        Self { flags: [false; 4] }
+        return Self { flags: [false; 4] };
     }
 
     pub fn set(&mut self, flag: Flags) {
@@ -38,7 +38,7 @@ impl FlagsRegister {
     }
 
     pub fn is_set(&self, flag: Flags) -> bool {
-        self.flags[flag as usize]
+        return self.flags[flag as usize];
     }
 
     pub fn get_flags(&self) -> Vec<Flags> {
@@ -51,6 +51,6 @@ impl FlagsRegister {
             }
         }
 
-        result
+        return result;
     }
 }
