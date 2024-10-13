@@ -40,6 +40,11 @@ impl System {
 
     pub fn set_mem(&mut self, address: u16, value: u8) {
         if let Some(reference) = self.ram.get_mut(address as usize) {
+            // Memory map [0] to serial out
+            if address == 0 {
+                print!("{}", value as char);
+            }
+
             *reference = value;
         } else {
             println!("Error: out of bounds memory access [{:#06x}] ip={}", address, self.ip);
