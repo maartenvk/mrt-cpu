@@ -19,12 +19,12 @@ pub enum Opcode {
     JC,
     NOT,
     AND,
-    OR
+    OR,
 }
 
 #[derive(Debug)]
 pub enum OpcodeConversionError {
-    NoSuchOpcode
+    NoSuchOpcode,
 }
 
 impl TryFrom<&str> for Opcode {
@@ -47,7 +47,7 @@ impl TryFrom<&str> for Opcode {
             "NOT" => Opcode::NOT,
             "AND" => Opcode::AND,
             "OR" => Opcode::OR,
-            _ => return Err(OpcodeConversionError::NoSuchOpcode)
+            _ => return Err(OpcodeConversionError::NoSuchOpcode),
         };
 
         Ok(result)
@@ -74,7 +74,7 @@ impl TryFrom<u8> for Opcode {
             12 => Opcode::NOT,
             13 => Opcode::AND,
             14 => Opcode::OR,
-            _ => return Err(OpcodeConversionError::NoSuchOpcode)
+            _ => return Err(OpcodeConversionError::NoSuchOpcode),
         };
 
         Ok(result)
@@ -98,12 +98,12 @@ pub enum Register {
     R12,
     R13,
     R14,
-    R15
+    R15,
 }
 
 #[derive(Debug)]
 pub enum RegisterConversionError {
-    NoSuchRegister
+    NoSuchRegister,
 }
 
 impl TryFrom<&str> for Register {
@@ -127,7 +127,7 @@ impl TryFrom<&str> for Register {
         let digit = chars.next();
 
         let mut num = (digit.unwrap() as u8) - ('0' as u8);
-        
+
         if let Some(digit_2) = chars.next() {
             num *= 10;
             num += (digit_2 as u8) - ('0' as u8);
@@ -142,25 +142,25 @@ impl TryFrom<u8> for Register {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         if value > 15 {
-            return Err(RegisterConversionError::NoSuchRegister) 
+            return Err(RegisterConversionError::NoSuchRegister);
         }
 
         let regs = [
-           Register::R0,
-           Register::R1,
-           Register::R2,
-           Register::R3,
-           Register::R4,
-           Register::R5,
-           Register::R6,
-           Register::R7,
-           Register::R8,
-           Register::R9,
-           Register::R10,
-           Register::R12,
-           Register::R13,
-           Register::R14,
-           Register::R15
+            Register::R0,
+            Register::R1,
+            Register::R2,
+            Register::R3,
+            Register::R4,
+            Register::R5,
+            Register::R6,
+            Register::R7,
+            Register::R8,
+            Register::R9,
+            Register::R10,
+            Register::R12,
+            Register::R13,
+            Register::R14,
+            Register::R15,
         ];
 
         Ok(regs[value as usize])
@@ -173,7 +173,7 @@ pub enum InstructionType {
     RegImm,
     DoubleReg,
     DoubleRegImm4,
-    TripleReg
+    TripleReg,
 }
 
 #[derive(Debug)]
@@ -182,11 +182,11 @@ pub enum Instruction {
     RegImm(Opcode, Register, u8),
     DoubleReg(Opcode, Register, Register),
     DoubleRegImm4(Opcode, Register, Register, u8),
-    TripleReg(Opcode, Register, Register, Register)
+    TripleReg(Opcode, Register, Register, Register),
 }
 
 impl Instruction {
-    pub fn disassemble(first_byte: u8, second_byte: u8) -> Result<Instruction, CompileError>{
+    pub fn disassemble(first_byte: u8, second_byte: u8) -> Result<Instruction, CompileError> {
         let opcode_raw = first_byte >> 4;
         let opcode = Opcode::try_from(opcode_raw);
         if opcode.is_err() {
@@ -205,30 +205,28 @@ impl Instruction {
             }
         };
 
-        let imm = || {
-            Token::Immediate(second_byte)
-        };
+        let imm = || Token::Immediate(second_byte);
 
-        let imm4 = || {
-            Token::Immediate(second_byte & 0b1111)
-        };
+        let imm4 = || Token::Immediate(second_byte & 0b1111);
 
         let mut tokens = match Instruction::get_type(opcode) {
-            InstructionType::NoParam
-             => vec![],
+            InstructionType::NoParam => vec![],
 
-            InstructionType::RegImm 
-             => vec![get_reg(reg_raw), Ok(imm())],
+            InstructionType::RegImm => vec![get_reg(reg_raw), Ok(imm())],
 
-            InstructionType::DoubleReg
-             => vec![get_reg(reg_raw), get_reg(second_byte >> 4)],
+            InstructionType::DoubleReg => vec![get_reg(reg_raw), get_reg(second_byte >> 4)],
 
-            InstructionType::DoubleRegImm4
-             => vec![get_reg(reg_raw), get_reg(second_byte >> 4), Ok(imm4())],
+            InstructionType::DoubleRegImm4 => {
+                vec![get_reg(reg_raw), get_reg(second_byte >> 4), Ok(imm4())]
+            }
 
-            InstructionType::TripleReg
-             => vec![get_reg(reg_raw), get_reg(second_byte >> 4), get_reg(second_byte & 0b1111)]
-        }.into_iter();
+            InstructionType::TripleReg => vec![
+                get_reg(reg_raw),
+                get_reg(second_byte >> 4),
+                get_reg(second_byte & 0b1111),
+            ],
+        }
+        .into_iter();
 
         let generated = Instruction::generate(opcode, || {
             if let Some(token) = tokens.next() {
@@ -267,7 +265,7 @@ impl Instruction {
             InstructionType::RegImm => 2,
             InstructionType::DoubleReg => 2,
             InstructionType::DoubleRegImm4 => 2,
-            InstructionType::TripleReg => 2
+            InstructionType::TripleReg => 2,
         }
     }
 }
@@ -275,20 +273,19 @@ impl Instruction {
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NoParam(opcode)
-                => write!(f, "{:?}", opcode),
+            Self::NoParam(opcode) => write!(f, "{:?}", opcode),
 
-            Self::RegImm(opcode, reg, imm)
-                => write!(f, "{:?} {:?} {:#02x}", opcode, reg, imm),
+            Self::RegImm(opcode, reg, imm) => write!(f, "{:?} {:?} {:#02x}", opcode, reg, imm),
 
-            Self::DoubleReg(opcode, reg, regb)
-                => write!(f, "{:?} {:?} {:?}", opcode, reg, regb),
+            Self::DoubleReg(opcode, reg, regb) => write!(f, "{:?} {:?} {:?}", opcode, reg, regb),
 
-            Self::DoubleRegImm4(opcode, reg, regb, imm4)
-                => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, imm4),
+            Self::DoubleRegImm4(opcode, reg, regb, imm4) => {
+                write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, imm4)
+            }
 
-            Self::TripleReg(opcode, reg, regb, regc)
-                => write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, regc)
+            Self::TripleReg(opcode, reg, regb, regc) => {
+                write!(f, "{:?} {:?} {:?} {:?}", opcode, reg, regb, regc)
+            }
         }
     }
 }

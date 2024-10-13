@@ -5,19 +5,19 @@ use crate::types::{Instruction, Opcode};
 pub struct System {
     rom: Vec<u8>,
     ram: Vec<u8>,
-    regs: [u8;16],
+    regs: [u8; 16],
     ip: u16,
-    flags: FlagsRegister
+    flags: FlagsRegister,
 }
 
 #[derive(Debug)]
 pub enum LoadRomError {
-    EmptyRom()
+    EmptyRom(),
 }
 
 #[derive(Debug)]
 pub enum LoadRamError {
-    EmptyRam()
+    EmptyRam(),
 }
 
 impl System {
@@ -25,15 +25,18 @@ impl System {
         Self {
             rom: vec![0u8; 1],
             ram: vec![0u8; ram_size],
-            regs: [0;16],
+            regs: [0; 16],
             ip: 0,
-            flags: FlagsRegister::new()
+            flags: FlagsRegister::new(),
         }
     }
 
     pub fn get_mem(&self, address: u16) -> u8 {
         *self.ram.get(address as usize).unwrap_or_else(|| {
-            println!("Error: out of bounds memory access [{:#06x}] ip={}", address, self.ip);
+            println!(
+                "Error: out of bounds memory access [{:#06x}] ip={}",
+                address, self.ip
+            );
             return &0;
         })
     }
@@ -47,18 +50,24 @@ impl System {
 
             *reference = value;
         } else {
-            println!("Error: out of bounds memory access [{:#06x}] ip={}", address, self.ip);
+            println!(
+                "Error: out of bounds memory access [{:#06x}] ip={}",
+                address, self.ip
+            );
         }
     }
 
     pub fn get_rom(&self, address: u16) -> u8 {
         *self.rom.get(address as usize).unwrap_or_else(|| {
-            println!("Error: out of bounds ROM access [{:#06x}] ip={}", address, self.ip);
+            println!(
+                "Error: out of bounds ROM access [{:#06x}] ip={}",
+                address, self.ip
+            );
             return &0;
         })
     }
 
-    pub fn get_regs(&self) -> [u8;16] {
+    pub fn get_regs(&self) -> [u8; 16] {
         self.regs
     }
 
@@ -74,31 +83,34 @@ impl System {
         self.ip = address as u16;
     }
 
-    pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(),LoadRomError> {
+    pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<(), LoadRomError> {
         if rom.is_empty() {
-            return Err(LoadRomError::EmptyRom())
+            return Err(LoadRomError::EmptyRom());
         }
-        
+
         self.rom = rom;
         Ok(())
     }
 
-    pub fn load_ram(&mut self, ram: Vec<u8>) -> Result<(),LoadRamError> {
+    pub fn load_ram(&mut self, ram: Vec<u8>) -> Result<(), LoadRamError> {
         if ram.is_empty() {
-            return Err(LoadRamError::EmptyRam())
+            return Err(LoadRamError::EmptyRam());
         }
 
         self.ram = ram;
         Ok(())
     }
 
-    fn alu_operation<F>(&mut self, destination_raw_reg: usize, a: u8, b: u8, operation: F) where F: Fn(u8, u8) -> ALU {
+    fn alu_operation<F>(&mut self, destination_raw_reg: usize, a: u8, b: u8, operation: F)
+    where
+        F: Fn(u8, u8) -> ALU,
+    {
         let alu = operation(a, b);
         self.flags = alu.flags;
 
         self.regs[destination_raw_reg] = alu.result;
     }
-    
+
     // returns true if halted
     pub fn tick(&mut self) -> bool {
         let first_byte = *self.rom.get(self.ip as usize).unwrap_or(&0);
@@ -131,29 +143,29 @@ impl System {
                 self.ip -= Instruction::get_length(Opcode::HLT); // Undo goto next instruction
                 println!("Info: halting at ip={}", self.ip);
                 return true;
-            },
+            }
             Opcode::ADD => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::add),
             Opcode::XOR => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::xor),
             Opcode::SUB => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::sub),
-            Opcode::SHL => self.alu_operation(reg_raw, *reg2.unwrap(),  imm4, ALU::shl),
+            Opcode::SHL => self.alu_operation(reg_raw, *reg2.unwrap(), imm4, ALU::shl),
             Opcode::SHR => self.alu_operation(reg_raw, *reg2.unwrap(), imm4, ALU::shr),
             Opcode::AND => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::and),
             Opcode::OR => self.alu_operation(reg_raw, *reg2.unwrap(), *reg3.unwrap(), ALU::or),
             Opcode::LDI => {
                 self.regs[reg_raw] = imm;
-            },
+            }
             Opcode::SB => {
                 self.set_mem(offset as u16, *reg.unwrap());
-            },
+            }
             Opcode::LB => {
                 self.regs[reg_raw] = self.get_mem(offset as u16);
-            },
+            }
             Opcode::JNZ => {
                 let zf_set = self.flags.is_set(Flags::Zero);
                 if !zf_set {
                     self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
                 }
-            },
+            }
             Opcode::JAL => {
                 let new_ip = offset as u16;
 
@@ -161,16 +173,16 @@ impl System {
                 self.regs[reg2_raw] = self.ip as u8;
 
                 self.ip = new_ip;
-            },
+            }
             Opcode::JC => {
                 let cf_set = self.flags.is_set(Flags::Carry);
                 if cf_set {
                     self.ip = ((*reg.unwrap() as u16) << 8) | *reg2.unwrap() as u16;
                 }
-            },
+            }
             Opcode::NOT => {
                 self.regs[reg_raw] = !*reg2.unwrap();
-            },
+            }
         };
 
         false
@@ -183,29 +195,27 @@ pub enum Flags {
     Zero,
     Carry,
     Sign,
-    Overflow
+    Overflow,
 }
 
 impl Display for Flags {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_char(match self {
-            Flags::Zero     => 'Z',
-            Flags::Carry    => 'C',
-            Flags::Sign     => 'S',
-            Flags::Overflow => 'O'
+            Flags::Zero => 'Z',
+            Flags::Carry => 'C',
+            Flags::Sign => 'S',
+            Flags::Overflow => 'O',
         })
     }
 }
 
 pub struct FlagsRegister {
-    flags: [bool; 4]
+    flags: [bool; 4],
 }
 
 impl FlagsRegister {
     pub fn new() -> Self {
-        Self {
-            flags: [false; 4]
-        }
+        Self { flags: [false; 4] }
     }
 
     pub fn set(&mut self, flag: Flags) {
@@ -236,7 +246,7 @@ impl FlagsRegister {
 
 pub struct ALU {
     result: u8,
-    flags: FlagsRegister
+    flags: FlagsRegister,
 }
 
 impl ALU {
@@ -259,9 +269,7 @@ impl ALU {
         }
 
         // if both a, b are either signed or unsigned and different with result
-        if ALU::is_signed(a) == ALU::is_signed(b) &&
-            ALU::is_signed(a) != ALU::is_signed(result.0)
-        {
+        if ALU::is_signed(a) == ALU::is_signed(b) && ALU::is_signed(a) != ALU::is_signed(result.0) {
             flags.set(Flags::Overflow);
         }
 
@@ -273,7 +281,7 @@ impl ALU {
 
         Self {
             result: result.0,
-            flags: Self::flags_for_operation(a, b, result)
+            flags: Self::flags_for_operation(a, b, result),
         }
     }
 
@@ -282,7 +290,7 @@ impl ALU {
 
         Self {
             result: result.0,
-            flags: Self::flags_for_operation(a, b, result)
+            flags: Self::flags_for_operation(a, b, result),
         }
     }
 
@@ -291,7 +299,7 @@ impl ALU {
 
         Self {
             result,
-            flags: Self::flags_for_operation(a, b, (result, false))
+            flags: Self::flags_for_operation(a, b, (result, false)),
         }
     }
 
@@ -300,7 +308,7 @@ impl ALU {
 
         Self {
             result,
-            flags: Self::flags_for_operation(a, b, (result, false))
+            flags: Self::flags_for_operation(a, b, (result, false)),
         }
     }
 
@@ -309,7 +317,7 @@ impl ALU {
 
         Self {
             result,
-            flags: Self::flags_for_operation(a, b, (result, false))
+            flags: Self::flags_for_operation(a, b, (result, false)),
         }
     }
 
@@ -318,7 +326,7 @@ impl ALU {
 
         Self {
             result: result.0,
-            flags: Self::flags_for_operation(a, b, result)
+            flags: Self::flags_for_operation(a, b, result),
         }
     }
 
@@ -327,7 +335,7 @@ impl ALU {
 
         Self {
             result: result.0,
-            flags: Self::flags_for_operation(a, b, result)
+            flags: Self::flags_for_operation(a, b, result),
         }
     }
 }

@@ -1,10 +1,18 @@
-use std::{any::type_name, fs::File, path::Path, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{
+    any::type_name,
+    fs::File,
+    path::Path,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use crate::{compiler::Compiler, computer::System, types::Instruction};
 
 pub struct Cli {
     system: System,
-    interrupt: Arc<AtomicBool>
+    interrupt: Arc<AtomicBool>,
 }
 
 #[derive(Debug)]
@@ -21,11 +29,14 @@ impl Cli {
     pub fn new(interrupt: Arc<AtomicBool>) -> Self {
         Self {
             system: System::new(64),
-            interrupt
+            interrupt,
         }
     }
 
-    fn unpack<T: std::str::FromStr + num_traits::Num>(param_name: &'static str, string: &str) -> Result<T, CliError> {
+    fn unpack<T: std::str::FromStr + num_traits::Num>(
+        param_name: &'static str,
+        string: &str,
+    ) -> Result<T, CliError> {
         if let Ok(n) = string.parse::<T>() {
             Ok(n)
         } else if let Ok(n) = T::from_str_radix(string.trim_start_matches("0x"), 16) {
@@ -41,7 +52,7 @@ impl Cli {
             return Err(CliError::MissingParameter(stringify!(path)));
         }
 
-        let rom = std::fs::read(Path::new(path.unwrap())); 
+        let rom = std::fs::read(Path::new(path.unwrap()));
         if rom.is_err() {
             return Err(CliError::FailedToReadFromFile);
         }
@@ -75,10 +86,12 @@ impl Cli {
         let step_count = command.get(1);
         let mut step_count = if step_count.is_some() {
             Self::unpack::<usize>(stringify!(step_count), step_count.unwrap())?
-        } else { 1 };
-    
+        } else {
+            1
+        };
+
         while step_count > 0 {
-            step_count -=1 ;
+            step_count -= 1;
             if self.system.tick() {
                 break;
             }
@@ -118,7 +131,7 @@ impl Cli {
         let output_path = command.get(2);
         let output_path = output_path.unwrap_or(&"out.rom");
 
-        let input_file = File::open(Path::new(input_path.unwrap())); 
+        let input_file = File::open(Path::new(input_path.unwrap()));
         if input_file.is_err() {
             return Err(CliError::FailedToReadFromFile);
         }
@@ -131,7 +144,10 @@ impl Cli {
         let mut compiler = Compiler::new(input_file.unwrap(), output_file.unwrap());
         let result = compiler.compile();
         if result.is_ok() {
-            println!("Info: Compilation succesful, written to file: {}", output_path);
+            println!(
+                "Info: Compilation succesful, written to file: {}",
+                output_path
+            );
             Ok(())
         } else {
             println!("Error: Compilation failed: {:?}", result.err().unwrap());
@@ -159,7 +175,7 @@ impl Cli {
                     for flag in self.system.get_flags_register().get_flags() {
                         print!("{}", flag);
                     }
-                },
+                }
                 _ => {}
             }
 
@@ -185,16 +201,16 @@ impl Cli {
         let second_byte = self.system.get_rom(ip + 1);
 
         let generated = Instruction::disassemble(first_byte, second_byte);
-    
+
         if let Ok(instruction) = generated {
             println!("{:#04x}: {}", ip, instruction);
-            
+
             Instruction::get_length(match instruction {
                 Instruction::NoParam(opcode) => opcode,
                 Instruction::RegImm(opcode, _, _) => opcode,
                 Instruction::DoubleReg(opcode, _, _) => opcode,
                 Instruction::DoubleRegImm4(opcode, _, _, _) => opcode,
-                Instruction::TripleReg(opcode, _, _, _) => opcode
+                Instruction::TripleReg(opcode, _, _, _) => opcode,
             })
         } else {
             println!("Error: Disassembly failed: {:?}", generated.unwrap_err());
@@ -211,7 +227,7 @@ impl Cli {
             let to = Self::unpack::<u16>(stringify!(to), to)?;
 
             if from > to {
-                return Err(CliError::FailedParameterConstraint(stringify!(from > to)))
+                return Err(CliError::FailedParameterConstraint(stringify!(from > to)));
             }
 
             let mut ip = from as u16;
@@ -232,7 +248,10 @@ impl Cli {
     }
 
     fn print_single_read_memory(&self, address: u16, value: u8) {
-        println!("[{:#06x}]: {:#04x}, {:#3}, '{}'", address, value, value, value as char);
+        println!(
+            "[{:#06x}]: {:#04x}, {:#3}, '{}'",
+            address, value, value, value as char
+        );
     }
 
     pub fn read_memory(&self, command: Vec<&str>) -> Result<(), CliError> {
@@ -242,11 +261,11 @@ impl Cli {
         }
 
         let mut address = Self::unpack::<u16>(stringify!(address), address.unwrap())?;
-        
+
         let count = command.get(2);
         if let Some(count) = count {
             let count = Self::unpack::<usize>(stringify!(count), count)?;
-            
+
             for _ in 0..count {
                 let value = self.system.get_mem(address);
                 self.print_single_read_memory(address, value);
@@ -256,7 +275,7 @@ impl Cli {
             let value = self.system.get_mem(address);
             self.print_single_read_memory(address, value);
         }
-        
+
         Ok(())
     }
 
@@ -277,7 +296,7 @@ impl Cli {
         let count = command.get(3);
         if let Some(count) = count {
             let count = Self::unpack::<usize>(stringify!(count), count)?;
-            
+
             for _ in 0..count {
                 self.system.set_mem(address, byte);
                 address += 1;
@@ -285,7 +304,7 @@ impl Cli {
         } else {
             self.system.set_mem(address, byte);
         }
-        
+
         Ok(())
     }
 }
