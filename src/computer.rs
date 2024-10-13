@@ -1,6 +1,7 @@
 use std::fmt::{Display, Write};
 
 use crate::{
+    alu as ALU,
     storage::{ReadableStorage, WritableStorage, RAM},
     types::{Instruction, Opcode},
 };
@@ -96,12 +97,12 @@ impl System {
 
     fn alu_operation<F>(&mut self, destination_raw_reg: usize, a: u8, b: u8, operation: F)
     where
-        F: Fn(u8, u8) -> ALU,
+        F: Fn(u8, u8) -> ALU::Result,
     {
-        let alu = operation(a, b);
-        self.flags = alu.flags;
+        let alu_result = operation(a, b);
 
-        self.regs[destination_raw_reg] = alu.result;
+        self.flags = alu_result.flags;
+        self.regs[destination_raw_reg] = alu_result.value;
     }
 
     // returns true if halted
@@ -234,101 +235,5 @@ impl FlagsRegister {
         }
 
         result
-    }
-}
-
-pub struct ALU {
-    result: u8,
-    flags: FlagsRegister,
-}
-
-impl ALU {
-    fn is_signed(byte: u8) -> bool {
-        (byte & 0b1000_0000) > 0
-    }
-
-    fn flags_for_operation(a: u8, b: u8, result: (u8, bool)) -> FlagsRegister {
-        let mut flags = FlagsRegister::new();
-        if result.0 == 0 {
-            flags.set(Flags::Zero);
-        }
-
-        if result.1 {
-            flags.set(Flags::Carry);
-        }
-
-        if ALU::is_signed(result.0) {
-            flags.set(Flags::Sign);
-        }
-
-        // if both a, b are either signed or unsigned and different with result
-        if ALU::is_signed(a) == ALU::is_signed(b) && ALU::is_signed(a) != ALU::is_signed(result.0) {
-            flags.set(Flags::Overflow);
-        }
-
-        flags
-    }
-
-    pub fn add(a: u8, b: u8) -> Self {
-        let result = a.overflowing_add(b);
-
-        Self {
-            result: result.0,
-            flags: Self::flags_for_operation(a, b, result),
-        }
-    }
-
-    pub fn sub(a: u8, b: u8) -> Self {
-        let result = a.overflowing_sub(b);
-
-        Self {
-            result: result.0,
-            flags: Self::flags_for_operation(a, b, result),
-        }
-    }
-
-    pub fn and(a: u8, b: u8) -> Self {
-        let result = a & b;
-
-        Self {
-            result,
-            flags: Self::flags_for_operation(a, b, (result, false)),
-        }
-    }
-
-    pub fn or(a: u8, b: u8) -> Self {
-        let result = a | b;
-
-        Self {
-            result,
-            flags: Self::flags_for_operation(a, b, (result, false)),
-        }
-    }
-
-    pub fn xor(a: u8, b: u8) -> Self {
-        let result = a ^ b;
-
-        Self {
-            result,
-            flags: Self::flags_for_operation(a, b, (result, false)),
-        }
-    }
-
-    pub fn shl(a: u8, b: u8) -> Self {
-        let result = a.overflowing_shl(b as u32);
-
-        Self {
-            result: result.0,
-            flags: Self::flags_for_operation(a, b, result),
-        }
-    }
-
-    pub fn shr(a: u8, b: u8) -> Self {
-        let result = a.overflowing_shr(b as u32);
-
-        Self {
-            result: result.0,
-            flags: Self::flags_for_operation(a, b, result),
-        }
     }
 }
