@@ -1,9 +1,12 @@
 use std::fmt::{Display, Write};
 
-use crate::types::{Instruction, Opcode};
+use crate::{
+    storage::{ReadableStorage, ROM},
+    types::{Instruction, Opcode},
+};
 
 pub struct System {
-    rom: Vec<u8>,
+    rom: ROM<u8>,
     ram: Vec<u8>,
     regs: [u8; 16],
     ip: u16,
@@ -23,7 +26,7 @@ pub enum LoadRamError {
 impl System {
     pub fn new(ram_size: usize) -> Self {
         Self {
-            rom: vec![0u8; 1],
+            rom: ROM::new(1),
             ram: vec![0u8; ram_size],
             regs: [0; 16],
             ip: 0,
@@ -58,13 +61,15 @@ impl System {
     }
 
     pub fn get_rom(&self, address: u16) -> u8 {
-        *self.rom.get(address as usize).unwrap_or_else(|| {
-            println!(
-                "Error: out of bounds ROM access [{:#06x}] ip={}",
-                address, self.ip
-            );
-            return &0;
-        })
+        if let Ok(value) = self.rom.get(address as usize) {
+            return value;
+        }
+
+        println!(
+            "Error: out of bounds ROM access [{:#06x}] ip={}",
+            address, self.ip
+        );
+        return 0;
     }
 
     pub fn get_regs(&self) -> [u8; 16] {
@@ -88,8 +93,8 @@ impl System {
             return Err(LoadRomError::EmptyRom());
         }
 
-        self.rom = rom;
-        Ok(())
+        self.rom = ROM::from(rom);
+        return Ok(());
     }
 
     pub fn load_ram(&mut self, ram: Vec<u8>) -> Result<(), LoadRamError> {
@@ -113,8 +118,8 @@ impl System {
 
     // returns true if halted
     pub fn tick(&mut self) -> bool {
-        let first_byte = *self.rom.get(self.ip as usize).unwrap_or(&0);
-        let data = *self.rom.get(self.ip as usize + 1).unwrap_or(&0);
+        let first_byte = self.rom.get(self.ip as usize).unwrap_or(0);
+        let data = self.rom.get(self.ip as usize + 1).unwrap_or(0);
 
         let opcode_raw = first_byte >> 4;
         let opcode = Opcode::try_from(opcode_raw);
