@@ -197,8 +197,8 @@ impl Cli {
     }
 
     fn disassemble_single(&self, ip: u16) -> u16 {
-        let first_byte = self.system.get_rom(ip);
-        let second_byte = self.system.get_rom(ip + 1);
+        let first_byte = self.system.get_mem(ip);
+        let second_byte = self.system.get_mem(ip + 1);
 
         let generated = Instruction::disassemble(first_byte, second_byte);
 

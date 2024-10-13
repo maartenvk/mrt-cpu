@@ -2,9 +2,11 @@
 Word size 8-bit, addressing size 16-bit.
 Harvard architecture.
 
-Planning to migrate to Von Neumann architecture, and increasing word size to 16/32-bit.
+Planning
+- [x] Migrate to Von Neumann architecture
+- [ ] Increase word size to 16- or 32-bit
 
-This is fully written in the Rust programming language.  
+This is fully written in the Rust programming language.
 It is a Command Line Interface in which you may compile custom assembly files into .rom files.
 
 Such rom file can be loaded into the system emulator using the `load_rom` command.
@@ -36,7 +38,7 @@ Variant **DoubleReg**:
 Variant **DoubleRegImm4**:
 ```
  0    3   4   7   8  11   12  15
-[opcode] [reg1 ] [reg2 ] [imm4  ] 
+[opcode] [reg1 ] [reg2 ] [imm4  ]
 ```
 
 Variant **TripleReg**:
