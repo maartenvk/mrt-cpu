@@ -84,6 +84,17 @@ where
     data: Vec<T>,
 }
 
+impl<T> RAM<T>
+where
+    T: Copy + Default,
+{
+    pub fn new(ram_size: usize) -> Self {
+        return Self {
+            data: vec![T::default(); ram_size],
+        };
+    }
+}
+
 impl<T> FiniteStorage for RAM<T>
 where
     T: Copy,
@@ -117,5 +128,14 @@ where
         }
 
         return Err(StorageError::OutOfBounds);
+    }
+}
+
+impl<T> From<Vec<T>> for RAM<T>
+where
+    T: Copy,
+{
+    fn from(value: Vec<T>) -> Self {
+        return Self { data: value };
     }
 }

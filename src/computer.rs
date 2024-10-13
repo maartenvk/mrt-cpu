@@ -1,13 +1,13 @@
 use std::fmt::{Display, Write};
 
 use crate::{
-    storage::{ReadableStorage, ROM},
+    storage::{ReadableStorage, WritableStorage, RAM, ROM},
     types::{Instruction, Opcode},
 };
 
 pub struct System {
     rom: ROM<u8>,
-    ram: Vec<u8>,
+    ram: RAM<u8>,
     regs: [u8; 16],
     ip: u16,
     flags: FlagsRegister,
@@ -27,7 +27,7 @@ impl System {
     pub fn new(ram_size: usize) -> Self {
         Self {
             rom: ROM::new(1),
-            ram: vec![0u8; ram_size],
+            ram: RAM::new(ram_size),
             regs: [0; 16],
             ip: 0,
             flags: FlagsRegister::new(),
@@ -35,24 +35,26 @@ impl System {
     }
 
     pub fn get_mem(&self, address: u16) -> u8 {
-        *self.ram.get(address as usize).unwrap_or_else(|| {
-            println!(
-                "Error: out of bounds memory access [{:#06x}] ip={}",
-                address, self.ip
-            );
-            return &0;
-        })
+        if let Ok(value) = self.ram.get(address as usize) {
+            return value;
+        }
+
+        println!(
+            "Error: out of bounds memory access [{:#06x}] ip={}",
+            address, self.ip
+        );
+
+        return 0;
     }
 
     pub fn set_mem(&mut self, address: u16, value: u8) {
-        if let Some(reference) = self.ram.get_mut(address as usize) {
-            // Memory map [0] to serial out
-            if address == 0 {
-                print!("{}", value as char);
-            }
+        if address == 0 {
+            // intercept [0] as serial out
+            print!("{}", value as char);
+            return;
+        }
 
-            *reference = value;
-        } else {
+        if self.ram.set(address as usize, value).is_err() {
             println!(
                 "Error: out of bounds memory access [{:#06x}] ip={}",
                 address, self.ip
@@ -102,8 +104,8 @@ impl System {
             return Err(LoadRamError::EmptyRam());
         }
 
-        self.ram = ram;
-        Ok(())
+        self.ram = RAM::from(ram);
+        return Ok(());
     }
 
     fn alu_operation<F>(&mut self, destination_raw_reg: usize, a: u8, b: u8, operation: F)
