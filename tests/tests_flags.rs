@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use mrt_cpu::flags::*;
+    use mrt_cpu::machine::flags::*;
 
     #[test]
     fn flags_initialized_off() {

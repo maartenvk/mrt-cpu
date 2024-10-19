@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use mrt_cpu::{alu as ALU, flags::*};
+    use mrt_cpu::machine::{alu as ALU, flags::*};
 
     #[test]
     fn alu_is_signed() {

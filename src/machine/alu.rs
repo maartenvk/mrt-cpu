@@ -1,4 +1,4 @@
-use crate::flags::{Flags, FlagsRegister};
+use crate::machine::flags::{Flags, FlagsRegister};
 
 pub struct Result {
     pub value: u8,

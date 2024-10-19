@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use mrt_cpu::storage::*;
+    use mrt_cpu::machine::storage::*;
 
     #[test]
     fn ram_new_size() {
