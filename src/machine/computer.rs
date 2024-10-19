@@ -9,6 +9,8 @@ use crate::{
 
 use crate::types::Opcode;
 
+use super::storage::FiniteStorage;
+
 pub struct System {
     ram: RAM<u8>,
     regs: [u8; 16],
@@ -42,7 +44,7 @@ impl System {
         }
 
         println!(
-            "Error: out of bounds memory access [{:#06x}] ip={}",
+            "Error: out of bounds memory store operation [{:#06x}] ip={}",
             address, self.ip
         );
 
@@ -58,7 +60,7 @@ impl System {
 
         if self.ram.set(address as usize, value).is_err() {
             println!(
-                "Error: out of bounds memory access [{:#06x}] ip={}",
+                "Error: out of bounds memory load operation [{:#06x}] ip={}",
                 address, self.ip
             );
         }
@@ -85,7 +87,14 @@ impl System {
             return Err(LoadRomError::EmptyRom());
         }
 
+        let old_ram_size = self.ram.size();
         self.ram = RAM::from(rom);
+
+        let new_ram_size = self.ram.size();
+        if old_ram_size > new_ram_size {
+            self.ram.resize(old_ram_size);
+        }
+
         return Ok(());
     }
 

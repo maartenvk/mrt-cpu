@@ -93,6 +93,10 @@ where
             data: vec![T::default(); ram_size],
         };
     }
+
+    pub fn resize(&mut self, new_ram_size: usize) {
+        self.data.resize(new_ram_size, T::default());
+    }
 }
 
 impl<T> FiniteStorage for RAM<T>
