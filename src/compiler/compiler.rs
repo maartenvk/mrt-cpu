@@ -6,7 +6,7 @@ use std::{
 
 use crate::types::*;
 
-use super::instruction::Instruction;
+use crate::compiler::{instruction::Instruction, token::Token};
 
 pub struct Bytecode {
     instructions: Vec<Instruction>,
@@ -55,13 +55,6 @@ pub enum CompilationState {
     Comment(Vec<char>),
     Symbol(Vec<char>),
     Numeric(Vec<char>),
-}
-
-#[derive(Debug, Clone)]
-pub enum Token {
-    Opcode(Opcode),
-    Register(Register),
-    Immediate(u8),
 }
 
 impl Compiler {

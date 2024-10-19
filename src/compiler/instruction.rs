@@ -1,8 +1,7 @@
 use std::fmt::Display;
 
+use crate::compiler::{compiler::CompileError, token::Token};
 use crate::types::*;
-
-use super::compiler::{CompileError, Token};
 
 #[derive(Debug)]
 pub enum Instruction {
