@@ -1,10 +1,13 @@
-use crate::machine::{
-    alu as ALU,
-    flags::{Flags, FlagsRegister},
-    storage::{ReadableStorage, WritableStorage, RAM},
+use crate::{
+    compiler::instruction::Instruction,
+    machine::{
+        alu as ALU,
+        flags::{Flags, FlagsRegister},
+        storage::{ReadableStorage, WritableStorage, RAM},
+    },
 };
 
-use crate::types::{Instruction, Opcode};
+use crate::types::Opcode;
 
 pub struct System {
     ram: RAM<u8>,
