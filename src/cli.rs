@@ -8,7 +8,7 @@ use std::{
     },
 };
 
-use crate::{compiler::Compiler, machine::computer::System, types::Instruction};
+use crate::{compiler::compiler::Compiler, machine::computer::System, types::Instruction};
 
 pub struct Cli {
     system: System,

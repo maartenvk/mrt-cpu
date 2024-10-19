@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::compiler::{CompileError, Token};
+use crate::compiler::compiler::{CompileError, Token};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug)]
