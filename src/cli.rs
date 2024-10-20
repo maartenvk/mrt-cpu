@@ -8,8 +8,11 @@ use std::{
     },
 };
 
-use crate::compiler::{compiler::Compiler, instruction::Instruction};
 use crate::machine::computer::System;
+use crate::{
+    compiler::{compiler::Compiler, instruction::Instruction},
+    new_compiler,
+};
 
 pub struct Cli {
     system: System,
@@ -123,7 +126,38 @@ impl Cli {
         Ok(())
     }
 
+    pub fn new_compile(&mut self, command: Vec<&str>) -> Result<(), CliError> {
+        let input_path = command.get(1);
+        if input_path.is_none() {
+            return Err(CliError::MissingParameter(stringify!(input_path)));
+        }
+
+        let input_path = input_path.unwrap();
+
+        let output_path = command.get(2);
+        let output_path = output_path.unwrap_or(&"out.rom");
+
+        let compilation_result =
+            new_compiler::compile_file(Path::new(input_path), Path::new(output_path));
+
+        if let Err(error) = compilation_result {
+            println!("Error: Compilaiton failed: {:?}", error);
+            return Err(CliError::OperationError);
+        }
+
+        println!(
+            "Info: Compilation successful, written to file: {}",
+            output_path
+        );
+
+        return Ok(());
+    }
+
     pub fn compile(&mut self, command: Vec<&str>) -> Result<(), CliError> {
+        if *command.get(3).unwrap_or(&"") == "--new" {
+            return self.new_compile(command);
+        }
+
         let input_path = command.get(1);
         if input_path.is_none() {
             return Err(CliError::MissingParameter(stringify!(input_path)));

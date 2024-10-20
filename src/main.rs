@@ -56,7 +56,7 @@ fn main() {
     ram_size [ram_size] - set ram size
     step, s <step_count> - step N amount of instructions
     continue, c - continue running until Ctrl+C
-    compile, com [file] <out> - compile assembly file and output to `out'
+    compile, com [file] <out> <--new> - compile assembly file and output to `out'. --new as last (3rd) parameter uses the new compiler
     regs - print system registers
     goto [address] - set ip to address
     disassemble, dis <count|from> <to> - disassemble N instruction at ip or from range
