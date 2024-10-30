@@ -5,6 +5,7 @@ Harvard architecture.
 Planning
 - [x] Migrate to Von Neumann architecture
 - [ ] Increase word size to 16- or 32-bit
+- [ ] Create new (better structured) compiler
 
 This is fully written in the Rust programming language.
 It is a Command Line Interface in which you may compile custom assembly files into .rom files.
