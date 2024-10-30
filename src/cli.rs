@@ -141,7 +141,7 @@ impl Cli {
             new_compiler::compile_file(Path::new(input_path), Path::new(output_path));
 
         if let Err(error) = compilation_result {
-            println!("Error: Compilaiton failed: {:?}", error);
+            println!("Error: compilation failed: {:?}", error);
             return Err(CliError::OperationError);
         }
 
