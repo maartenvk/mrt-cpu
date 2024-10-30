@@ -89,6 +89,10 @@ impl Token {
         self.data.push(c);
         return Ok(());
     }
+
+    pub fn ttype(&self) -> TokenType {
+        return self.ttype;
+    }
 }
 
 pub fn tokenize(

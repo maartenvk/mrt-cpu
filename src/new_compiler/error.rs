@@ -3,7 +3,7 @@ use std::{ffi::OsString, path::Path, rc::Rc};
 use crate::new_compiler::token::TokenType;
 
 // Used to describe the accurate position of the compiler in case of an error
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Position {
     path: Rc<OsString>, // Rc because it will be cloned often for many tokens in the same file. Since they are in the same file, it is not necessary to reallocate a lot of memory to store the path to the file.
     line_number: usize,
@@ -19,6 +19,10 @@ impl Position {
             line_offset: 0,
             actual_offset: 0,
         };
+    }
+
+    pub fn get_line_info(&self) -> (usize, usize) {
+        return (self.line_number, self.line_offset);
     }
 
     pub fn next_line(&mut self) {
@@ -40,13 +44,13 @@ pub enum CompilationError {
     Tokenizer(TokenizationError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenizationError {
     TokenTypeConversion(Position, TokenTypeConversionError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenTypeConversionError {
-    IncompatibleTypes(TokenType, TokenType),
+    IncompatibleTypes(TokenType, TokenType), // received type, current type
     UnknownCharacter(char),
 }
