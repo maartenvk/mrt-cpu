@@ -116,7 +116,7 @@ pub fn tokenize(
         }
 
         if let Err(error) = current_token.take(c) {
-            if matches!(error, TokenTypeConversionError::IncompatibleTypes(_, _)) {
+            if matches!(error, TokenTypeConversionError::IncompatibleTypes(..)) {
                 tokens.push(current_token);
                 current_token = Token::new(pos.clone());
                 _ = current_token.take(c);
@@ -127,9 +127,5 @@ pub fn tokenize(
     }
 
     tokens.push(current_token);
-    for token in &tokens {
-        println!("Collected token: {:?}", token);
-    }
-
     return Ok(Box::new(tokens));
 }

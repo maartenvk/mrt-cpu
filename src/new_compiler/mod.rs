@@ -14,7 +14,10 @@ pub fn compile(input_stream: &[u8], file_path: &Path) -> Result<Box<Vec<u8>>, Co
         return Err(CompilationError::Tokenizer(error));
     }
 
-    let tokens = tokens.unwrap();
+    let tokens = *tokens.unwrap();
+    for token in tokens {
+        println!("Collected token: {:?}", token);
+    }
 
     // parsing
 
